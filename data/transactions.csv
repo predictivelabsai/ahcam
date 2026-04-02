@@ -1,0 +1,34 @@
+production_title,transaction_type,amount,source_name,description,reference
+The Last Horizon,inflow,1500000,Global Screen Distribution,German theatrical distribution advance,GSC-2024-001
+The Last Horizon,inflow,850000,Pacific Rim Distributors,Australia/NZ distribution MG,PRM-2024-015
+The Last Horizon,inflow,1200000,Lionsgate International,North American streaming rights,LGI-2024-042
+The Last Horizon,inflow,700000,Toho International,Japanese theatrical rights,THI-2024-008
+Midnight in Marrakech,inflow,650000,Pathé Distribution,French theatrical distribution,PAT-2024-031
+Midnight in Marrakech,inflow,425000,Global Screen Distribution,German distribution advance,GSC-2024-018
+Midnight in Marrakech,inflow,800000,Lionsgate International,North American rights package,LGI-2024-055
+Broken Strings,inflow,320000,Lionsgate International,US streaming pre-sale,LGI-2024-067
+Broken Strings,inflow,180000,Global Screen Distribution,European territories bundle,GSC-2024-025
+Broken Strings,inflow,120000,Pacific Rim Distributors,ANZ distribution rights,PRM-2024-022
+Wild Pacific,inflow,550000,Pacific Rim Distributors,ANZ broadcast license,PRM-2024-009
+Wild Pacific,inflow,400000,Global Screen Distribution,European broadcast sales,GSC-2024-011
+Wild Pacific,inflow,500000,Lionsgate International,North American streaming deal,LGI-2024-033
+The Baker's Daughter,inflow,750000,Pathé Distribution,European theatrical package,PAT-2024-044
+The Baker's Daughter,inflow,600000,Lionsgate International,North American distribution,LGI-2024-071
+The Baker's Daughter,inflow,450000,Global Screen Distribution,German-speaking territories,GSC-2024-029
+The Baker's Daughter,inflow,300000,Toho International,Japanese distribution rights,THI-2024-012
+Code Red,inflow,1800000,Lionsgate International,North American streaming + theatrical,LGI-2024-088
+Code Red,inflow,950000,Global Screen Distribution,European territories pre-sale,GSC-2024-034
+Code Red,inflow,650000,Pacific Rim Distributors,ANZ broadcast + streaming,PRM-2024-028
+Code Red,inflow,400000,Toho International,Japanese broadcast rights,THI-2024-019
+Summer of '82,inflow,550000,Pathé Distribution,European theatrical package,PAT-2024-052
+Summer of '82,inflow,400000,Global Screen Distribution,German distribution advance,GSC-2024-038
+The Algorithm,inflow,1200000,Toho International,Japanese theatrical + streaming,THI-2024-025
+The Algorithm,inflow,950000,Lionsgate International,North American streaming rights,LGI-2024-095
+The Algorithm,inflow,750000,Global Screen Distribution,European territories bundle,GSC-2024-041
+Blood Orange,inflow,1100000,Pathé Distribution,French + European theatrical,PAT-2024-061
+Blood Orange,inflow,850000,Global Screen Distribution,German-speaking territories,GSC-2024-045
+Blood Orange,inflow,700000,Lionsgate International,North American distribution,LGI-2024-103
+Blood Orange,inflow,550000,Toho International,Asian territories package,THI-2024-031
+Dancing in December,inflow,680000,Lionsgate International,North American distribution,LGI-2024-078
+Dancing in December,inflow,520000,Global Screen Distribution,European territories,GSC-2024-036
+Dancing in December,inflow,480000,Pacific Rim Distributors,ANZ + Asian territories,PRM-2024-031

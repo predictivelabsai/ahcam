@@ -1,0 +1,27 @@
+production_title,priority,recipient_name,recipient_label,rule_type,percentage,cap,description
+The Last Horizon,1,Apex Film Finance,Financier - Senior Debt,percentage,100,28000000,Senior lender recoups production loan first
+The Last Horizon,2,Northstar Completion Guarantors,Completion Bond Fee,fixed,,840000,3% completion bond fee
+The Last Horizon,3,Horizon Sales Agency,Sales Commission,percentage,15,,Sales agent commission on all revenues
+The Last Horizon,4,Sarah Chen,Producer Fee,percentage,10,,Deferred producer fee
+The Last Horizon,5,,Profit Participants,residual,,,Remaining net profits split per agreements
+Midnight in Marrakech,1,Mediterranean Film Fund,MFF Senior Debt,percentage,100,8000000,Mediterranean Film Fund recoups investment
+Midnight in Marrakech,2,Pathé Distribution,Pathé Distribution Fee,percentage,25,,Distribution fee across European territories
+Midnight in Marrakech,3,Jean-Luc Moreau,Producer Corridor,corridor,50,,Producer share in corridor between EUR 8M-12M recoupment
+Midnight in Marrakech,4,,Net Profit Pool,residual,,,Remaining profits distributed per interparty agreement
+Broken Strings,1,Eagle Point Investors,Equity Investor,percentage,100,8500000,Full budget recoupment to equity investor
+Broken Strings,2,Writers Guild of America,WGA Residuals,percentage,3,,WGA residual payments
+Broken Strings,3,Screen Actors Guild,SAG Residuals,percentage,4,,SAG-AFTRA residual payments
+Broken Strings,4,,Producer Net Profits,residual,,,Remaining to producer and profit participants
+The Baker's Daughter,1,Apex Film Finance,Gap Financier,percentage,100,3000000,Gap loan recoupment
+The Baker's Daughter,2,Global Screen Distribution,International Sales Comm,percentage,20,,International sales agent commission
+The Baker's Daughter,3,,UK Tax Credit,fixed,,1100000,UK tax credit allocation
+The Baker's Daughter,4,,Net Profits,residual,,,Remaining net profits
+Code Red,1,Apex Film Finance,Production Loan,percentage,100,22000000,Senior production loan recoupment
+Code Red,2,Lionsgate International,Distribution Advance,percentage,100,8000000,Lionsgate MG recoupment
+Code Red,3,Horizon Sales Agency,Sales Commission,percentage,12.5,,Sales agent commission
+Code Red,4,,Talent Participations,percentage,5,,Above-the-line talent participations
+Code Red,5,,Net Profit Pool,residual,,,Remaining net profits
+Blood Orange,1,Mediterranean Film Fund,Production Finance,percentage,100,7000000,Italian co-production fund recoupment
+Blood Orange,2,Pathé Distribution,European Distribution,percentage,20,,European distribution commission
+Blood Orange,3,,Italian Tax Credit,fixed,,2200000,Italian tax incentive allocation
+Blood Orange,4,,Producer Net Profits,residual,,,Remaining to producers

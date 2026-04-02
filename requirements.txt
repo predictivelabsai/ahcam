@@ -1,0 +1,14 @@
+python-fasthtml
+python-dotenv
+sqlalchemy
+psycopg2-binary
+bcrypt
+PyJWT
+cryptography
+langchain-openai
+langgraph
+httpx
+pdfplumber
+plotly
+pandas
+numpy
