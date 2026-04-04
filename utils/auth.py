@@ -166,6 +166,100 @@ def decode_jwt_token(token: str) -> Optional[Dict]:
 # Helpers
 # ---------------------------------------------------------------------------
 
+def create_reset_token(email: str) -> Optional[str]:
+    """Create a short-lived JWT token for password reset (1 hour expiry)."""
+    import jwt
+
+    user = get_user_by_email(email)
+    if not user:
+        return None
+    secret = os.getenv("JWT_SECRET")
+    if not secret:
+        return None
+    payload = {
+        "user_id": user["user_id"],
+        "email": user["email"],
+        "purpose": "password_reset",
+        "exp": datetime.now(timezone.utc) + timedelta(hours=1),
+        "iat": datetime.now(timezone.utc),
+    }
+    return jwt.encode(payload, secret, algorithm="HS256")
+
+
+def verify_reset_token(token: str) -> Optional[Dict]:
+    """Verify a password reset token. Returns payload or None."""
+    import jwt
+
+    secret = os.getenv("JWT_SECRET")
+    if not secret:
+        return None
+    try:
+        payload = jwt.decode(token, secret, algorithms=["HS256"])
+        if payload.get("purpose") != "password_reset":
+            return None
+        return payload
+    except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+        return None
+
+
+def update_password(user_id: str, new_password: str) -> bool:
+    """Update a user's password."""
+    from sqlalchemy import text
+    pool = _get_pool()
+    pw_hash = hash_password(new_password)
+    with pool.get_session() as session:
+        result = session.execute(
+            text("""
+                UPDATE ahcam.users SET password_hash = :pw, updated_at = NOW()
+                WHERE user_id = :uid
+            """),
+            {"pw": pw_hash, "uid": user_id},
+        )
+        return result.rowcount > 0
+
+
+def send_reset_email(email: str, reset_url: str) -> bool:
+    """Send a password reset email via Postmark."""
+    api_key = os.getenv("POSTMARK_API_KEY")
+    from_email = os.getenv("FROM_EMAIL", "info@finespresso.org")
+    if not api_key:
+        logger.error("POSTMARK_API_KEY not set")
+        return False
+    try:
+        from postmarker.core import PostmarkClient
+        client = PostmarkClient(server_token=api_key)
+        client.emails.send(
+            From=from_email,
+            To=email,
+            Subject="AHCAM - Password Reset",
+            HtmlBody=f"""
+            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:480px;margin:0 auto;padding:2rem;">
+                <div style="background:linear-gradient(135deg,#0066cc,#004d99);padding:1.5rem;border-radius:12px 12px 0 0;text-align:center;">
+                    <h1 style="color:#fff;margin:0;font-size:1.25rem;">Ashland Hill</h1>
+                    <p style="color:#cce0ff;margin:0.25rem 0 0;font-size:0.8rem;">Collection Account Management</p>
+                </div>
+                <div style="background:#fff;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 12px 12px;padding:2rem;">
+                    <h2 style="color:#1e293b;font-size:1.1rem;margin:0 0 1rem;">Reset Your Password</h2>
+                    <p style="color:#475569;font-size:0.9rem;line-height:1.6;">
+                        Click the button below to reset your password. This link expires in 1 hour.
+                    </p>
+                    <a href="{reset_url}" style="display:inline-block;background:#0066cc;color:#fff;padding:0.75rem 1.5rem;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;margin:1rem 0;">
+                        Reset Password
+                    </a>
+                    <p style="color:#94a3b8;font-size:0.75rem;margin-top:1.5rem;">
+                        If you didn't request this, you can safely ignore this email.
+                    </p>
+                </div>
+            </div>
+            """,
+            TextBody=f"Reset your AHCAM password: {reset_url}\n\nThis link expires in 1 hour.",
+        )
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send reset email: {e}")
+        return False
+
+
 def get_user_by_google_id(google_id: str) -> Optional[Dict]:
     """Fetch a user by Google OAuth ID."""
     from sqlalchemy import text

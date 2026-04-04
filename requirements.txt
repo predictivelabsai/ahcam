@@ -13,3 +13,4 @@ plotly
 pandas
 numpy
 authlib
+postmarker

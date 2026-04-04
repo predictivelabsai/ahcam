@@ -985,6 +985,7 @@ def login_page(session):
         Input(type="email", name="email", placeholder="Email", required=True),
         Input(type="password", name="password", placeholder="Password", required=True),
         Button("Sign In", type="submit", cls="auth-btn"),
+        Div(A("Forgot password?", href="/forgot"), cls="auth-link"),
         Div(A("Create account", href="/register"), cls="auth-link"),
         cls="auth-form", method="post", action="/login",
     ))
@@ -1004,6 +1005,7 @@ def login_submit(email: str, password: str, session):
             Input(type="email", name="email", placeholder="Email", value=email, required=True),
             Input(type="password", name="password", placeholder="Password", required=True),
             Button("Sign In", type="submit", cls="auth-btn"),
+            Div(A("Forgot password?", href="/forgot"), cls="auth-link"),
             Div(A("Create account", href="/register"), cls="auth-link"),
             cls="auth-form", method="post", action="/login",
         ))
@@ -1097,6 +1099,74 @@ if _oauth_enabled:
 @rt("/logout")
 def logout(session):
     session.clear()
+    return RedirectResponse("/login", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Forgot / Reset Password
+# ---------------------------------------------------------------------------
+
+@rt("/forgot", methods=["GET"])
+def forgot_page(session, msg: str = "", error: str = ""):
+    parts = []
+    if msg:
+        parts.append(Div(msg, style="color:#16a34a;text-align:center;font-size:0.85rem;margin-bottom:0.5rem;"))
+    if error:
+        parts.append(Div(error, style="color:#dc2626;text-align:center;font-size:0.85rem;margin-bottom:0.5rem;"))
+    parts.append(Form(
+        Input(type="email", name="email", placeholder="Enter your email", required=True, autofocus=True),
+        Button("Send Reset Link", type="submit", cls="auth-btn"),
+        Div(A("Back to sign in", href="/login"), cls="auth-link"),
+        cls="auth-form", method="post", action="/forgot",
+    ))
+    return _auth_page("Reset Password", parts)
+
+
+@rt("/forgot", methods=["POST"])
+def forgot_submit(request, email: str):
+    from utils.auth import create_reset_token, send_reset_email
+    token = create_reset_token(email)
+    if token:
+        scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
+        host = request.headers.get("host", request.url.netloc)
+        reset_url = f"{scheme}://{host}/reset?token={token}"
+        send_reset_email(email, reset_url)
+    # Always show success (don't leak whether email exists)
+    return RedirectResponse("/forgot?msg=If+an+account+exists+with+that+email,+a+reset+link+has+been+sent.", status_code=303)
+
+
+@rt("/reset", methods=["GET"])
+def reset_page(token: str = "", error: str = ""):
+    from utils.auth import verify_reset_token
+    if not token:
+        return RedirectResponse("/forgot?error=Invalid+or+expired+reset+link.", status_code=303)
+    payload = verify_reset_token(token)
+    if not payload:
+        return RedirectResponse("/forgot?error=Invalid+or+expired+reset+link.", status_code=303)
+    parts = []
+    if error:
+        parts.append(Div(error, style="color:#dc2626;text-align:center;font-size:0.85rem;margin-bottom:0.5rem;"))
+    parts.append(Form(
+        Hidden(name="token", value=token),
+        Input(type="password", name="password", placeholder="New password", required=True, minlength="6", autofocus=True),
+        Input(type="password", name="password_confirm", placeholder="Confirm new password", required=True, minlength="6"),
+        Button("Reset Password", type="submit", cls="auth-btn"),
+        cls="auth-form", method="post", action="/reset",
+    ))
+    return _auth_page("Set New Password", parts)
+
+
+@rt("/reset", methods=["POST"])
+def reset_submit(token: str, password: str, password_confirm: str):
+    from utils.auth import verify_reset_token, update_password
+    if password != password_confirm:
+        return RedirectResponse(f"/reset?token={token}&error=Passwords+do+not+match.", status_code=303)
+    if len(password) < 6:
+        return RedirectResponse(f"/reset?token={token}&error=Password+must+be+at+least+6+characters.", status_code=303)
+    payload = verify_reset_token(token)
+    if not payload:
+        return RedirectResponse("/forgot?error=Invalid+or+expired+reset+link.", status_code=303)
+    update_password(payload["user_id"], password)
     return RedirectResponse("/login", status_code=303)
 
 
