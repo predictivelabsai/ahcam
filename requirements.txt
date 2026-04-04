@@ -12,3 +12,4 @@ pdfplumber
 plotly
 pandas
 numpy
+authlib

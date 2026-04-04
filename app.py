@@ -68,6 +68,7 @@ from modules.contracts import parse_contract_tool
 from modules.reports import generate_report, get_recoupment_position
 from modules.forecasting import generate_forecast
 from modules.anomaly import run_anomaly_scan
+from modules.crm import search_crm_deals, search_crm_contacts
 
 TOOLS = [
     search_productions, get_production_detail,
@@ -80,9 +81,42 @@ TOOLS = [
     generate_report, get_recoupment_position,
     generate_forecast,
     run_anomaly_scan,
+    search_crm_deals, search_crm_contacts,
 ]
 
 langgraph_agent = create_react_agent(model=llm, tools=TOOLS, prompt=SYSTEM_PROMPT)
+
+
+# ---------------------------------------------------------------------------
+# Google OAuth (optional — gracefully skip if no creds)
+# ---------------------------------------------------------------------------
+
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+_oauth_enabled = bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+
+_authlib_oauth = None
+if _oauth_enabled:
+    from authlib.integrations.starlette_client import OAuth as AuthlibOAuth
+    _authlib_oauth = AuthlibOAuth()
+    _authlib_oauth.register(
+        name="google",
+        client_id=GOOGLE_CLIENT_ID,
+        client_secret=GOOGLE_CLIENT_SECRET,
+        server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+        client_kwargs={"scope": "openid email profile"},
+    )
+
+_GOOGLE_SVG = """<svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+<path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+<path d="M9 18c2.43 0 4.467-.806 5.956-2.18l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853"/>
+<path d="M3.964 10.71A5.41 5.41 0 013.682 9c0-.593.102-1.17.282-1.71V4.958H.957A8.996 8.996 0 000 9s.38 1.572.957 3.042l3.007-2.332z" fill="#FBBC05"/>
+<path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 00.957 4.958L3.964 7.29C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+</svg>"""
+
+
+def _google_btn(label: str):
+    return A(NotStr(_GOOGLE_SVG), label, href="/oauth/google", cls="google-btn")
 
 
 # ---------------------------------------------------------------------------
@@ -536,11 +570,93 @@ html, body { height: 100vh; overflow: hidden; }
 }
 .conv-item:hover { background: #e2e8f0; }
 
+/* === Collapsible Sections === */
+.section-toggle {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem; font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: #94a3b8; background: none; border: none; cursor: pointer;
+  width: 100%; text-align: left; transition: color 0.15s;
+}
+.section-toggle:hover { color: #64748b; }
+.section-arrow { margin-left: auto; transition: transform 0.2s; }
+.section-toggle.open .section-arrow { transform: rotate(180deg); }
+.section-body { display: none; }
+.section-body.open { display: block; }
+
+/* === Kanban Board === */
+.kanban-board { display: flex; gap: 0.75rem; overflow-x: auto; padding-bottom: 0.5rem; }
+.kanban-col { min-width: 180px; flex: 1; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; }
+.kanban-col-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.5rem 0.75rem; border-bottom: 1px solid #e2e8f0;
+}
+.kanban-col-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; color: #64748b; }
+.kanban-col-count { font-size: 0.65rem; background: #e2e8f0; padding: 0.1rem 0.4rem; border-radius: 1rem; color: #475569; }
+.kanban-col-body { padding: 0.5rem; display: flex; flex-direction: column; gap: 0.4rem; min-height: 60px; }
+.kanban-card {
+  background: #fff; border: 1px solid #e2e8f0; border-radius: 6px;
+  padding: 0.5rem 0.6rem; cursor: pointer; transition: all 0.15s;
+}
+.kanban-card:hover { border-color: #0066cc; box-shadow: 0 2px 6px rgba(0,102,204,0.1); }
+.kanban-card-title { font-size: 0.75rem; font-weight: 600; color: #1e293b; }
+.kanban-card-meta { font-size: 0.65rem; color: #64748b; margin-top: 0.15rem; }
+
+/* === View Toggle === */
+.view-toggle { display: flex; border: 1px solid #e2e8f0; border-radius: 6px; overflow: hidden; }
+.view-toggle-btn {
+  padding: 0.3rem 0.6rem; font-size: 0.7rem; border: none;
+  background: #fff; color: #64748b; cursor: pointer;
+}
+.view-toggle-btn.active { background: #0066cc; color: #fff; }
+.view-toggle-btn:not(.active):hover { background: #f1f5f9; }
+
+/* === Google OAuth Button === */
+.google-btn {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  padding: 0.6rem; background: #4285f4; color: #fff; text-decoration: none;
+  border-radius: 8px; font-weight: 600; font-size: 0.85rem; width: 100%;
+  box-sizing: border-box;
+}
+.google-btn:hover { background: #3367d6; color: #fff; }
+.google-btn svg { flex-shrink: 0; }
+.divider {
+  text-align: center; color: #94a3b8; font-size: 0.75rem;
+  margin: 0.75rem 0; position: relative;
+}
+.divider::before, .divider::after {
+  content: ''; position: absolute; top: 50%; width: 40%;
+  height: 1px; background: #e2e8f0;
+}
+.divider::before { left: 0; }
+.divider::after { right: 0; }
+
+/* === Chat History Search === */
+.conv-search-input {
+  width: calc(100% - 2rem); margin: 0.25rem 1rem; padding: 0.3rem 0.6rem;
+  border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.7rem;
+  color: #475569; background: #fff;
+}
+.conv-search-input:focus { outline: none; border-color: #0066cc; }
+.conv-item.hidden { display: none; }
+.conv-more-btn {
+  display: block; width: calc(100% - 2rem); margin: 0.25rem 1rem; padding: 0.3rem;
+  font-size: 0.7rem; color: #0066cc; background: none; border: 1px solid #e2e8f0;
+  border-radius: 6px; cursor: pointer; text-align: center;
+}
+.conv-more-btn:hover { background: #f1f5f9; }
+
+/* === Profile Form === */
+.profile-form { max-width: 400px; }
+.profile-form .form-group { margin-bottom: 0.75rem; }
+.profile-form label { font-size: 0.75rem; color: #64748b; font-weight: 600; display: block; margin-bottom: 0.25rem; }
+
 /* === Responsive === */
 @media (max-width: 768px) {
   .app-layout { grid-template-columns: 1fr !important; }
   .left-pane { display: none; }
   .right-pane { display: none; }
+  .kanban-board { flex-direction: column; }
 }
 """
 
@@ -555,6 +671,14 @@ function toggleGroup(catId) {
     if (!list) return;
     list.classList.toggle('open');
     var btn = list.previousElementSibling;
+    if (btn) btn.classList.toggle('open');
+}
+
+function toggleSection(sectionId) {
+    var sec = document.getElementById(sectionId);
+    if (!sec) return;
+    sec.classList.toggle('open');
+    var btn = sec.previousElementSibling;
     if (btn) btn.classList.toggle('open');
 }
 
@@ -587,7 +711,7 @@ function loadModule(path, title) {
     var h = document.getElementById('center-title');
     if (h) h.textContent = title;
     document.querySelectorAll('.sidebar-item').forEach(function(i) { i.classList.remove('active'); });
-    event.currentTarget.classList.add('active');
+    if (event && event.currentTarget) event.currentTarget.classList.add('active');
 }
 
 function showChat() {
@@ -596,10 +720,31 @@ function showChat() {
     if (container) container.style.display = 'none';
     if (chatContainer) chatContainer.style.display = 'block';
     var h = document.getElementById('center-title');
-    if (h) h.textContent = 'AI Chat';
+    if (h) h.textContent = 'AI Assistant';
     document.querySelectorAll('.sidebar-item').forEach(function(i) { i.classList.remove('active'); });
     var chatBtn = document.getElementById('nav-chat');
     if (chatBtn) chatBtn.classList.add('active');
+}
+
+function showMoreHistory() {
+    var hidden = document.querySelectorAll('.conv-item.hidden');
+    hidden.forEach(function(el) { el.classList.remove('hidden'); });
+    var btn = document.getElementById('conv-more-btn');
+    if (btn) btn.style.display = 'none';
+    var search = document.getElementById('conv-search');
+    if (search) search.style.display = 'block';
+}
+
+function filterHistory(q) {
+    var items = document.querySelectorAll('.conv-item');
+    q = q.toLowerCase();
+    items.forEach(function(el) {
+        if (!q || el.textContent.toLowerCase().indexOf(q) >= 0) {
+            el.style.display = '';
+        } else {
+            el.style.display = 'none';
+        }
+    });
 }
 """
 
@@ -620,6 +765,11 @@ _ICONS = {
     "reports": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
     "forecasting": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
     "anomaly": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+    "crm": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>',
+    "guide": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
+    "profile": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+    "templates": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
+    "chevron": '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>',
     "logout": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
 }
 
@@ -685,6 +835,17 @@ def _help_expanders():
     return Div(*groups, cls="help-section")
 
 
+def _section_toggle(label, section_id, icon_name=None):
+    """Collapsible section header for sidebar."""
+    return Button(
+        Span(_icon(icon_name), cls="sidebar-item-icon") if icon_name else "",
+        label,
+        Span(_icon("chevron"), cls="section-arrow"),
+        cls="section-toggle",
+        onclick=f"toggleSection('{section_id}')",
+    )
+
+
 def _left_pane(user=None):
     return Div(
         Div(
@@ -698,7 +859,7 @@ def _left_pane(user=None):
         # Chat controls
         Div(
             Button("+ New Chat", cls="new-chat-btn", onclick="window.location.href='/?new=1'"),
-            _sidebar_item("chat", "AI Chat", "showChat()", item_id="nav-chat", active=True),
+            _sidebar_item("chat", "AI Assistant", "showChat()", item_id="nav-chat", active=True),
             _help_expanders(),
             Div(
                 Div("Recent Chats", cls="sidebar-section-title"),
@@ -707,26 +868,43 @@ def _left_pane(user=None):
             ),
             cls="sidebar-section",
         ),
+        # CRM (always visible)
         Div(
-            Div("Core CAM", cls="sidebar-section-title"),
-            _sidebar_item("productions", "Productions", "loadModule('/module/productions', 'Productions')", item_id="nav-productions"),
-            _sidebar_item("stakeholders", "Stakeholders", "loadModule('/module/stakeholders', 'Stakeholders')", item_id="nav-stakeholders"),
-            _sidebar_item("accounts", "Collection Accounts", "loadModule('/module/accounts', 'Collection Accounts')", item_id="nav-accounts"),
-            _sidebar_item("waterfall", "Waterfall Engine", "loadModule('/module/waterfall', 'Waterfall Engine')", item_id="nav-waterfall"),
-            _sidebar_item("transactions", "Transactions", "loadModule('/module/transactions', 'Transactions')", item_id="nav-transactions"),
-            _sidebar_item("disbursements", "Disbursements", "loadModule('/module/disbursements', 'Disbursements')", item_id="nav-disbursements"),
+            _sidebar_item("crm", "CRM", "loadModule('/module/crm', 'CRM')", item_id="nav-crm"),
             cls="sidebar-section",
+            style="padding-top:0;",
         ),
+        # Financing OS (collapsed by default)
         Div(
-            Div("AI Tools", cls="sidebar-section-title"),
-            _sidebar_item("contracts", "Contract Parser", "loadModule('/module/contracts', 'Contract Parser')", item_id="nav-contracts"),
-            _sidebar_item("reports", "Reports", "loadModule('/module/reports', 'Reports')", item_id="nav-reports"),
-            _sidebar_item("forecasting", "Forecasting", "loadModule('/module/forecasting', 'Revenue Forecasting')", item_id="nav-forecasting"),
-            _sidebar_item("anomaly", "Anomaly Detection", "loadModule('/module/anomaly', 'Anomaly Detection')", item_id="nav-anomaly"),
-            cls="sidebar-section",
+            _section_toggle("Financing OS", "sec-financing"),
+            Div(
+                _sidebar_item("productions", "Productions", "loadModule('/module/productions', 'Productions')", item_id="nav-productions"),
+                _sidebar_item("stakeholders", "Stakeholders", "loadModule('/module/stakeholders', 'Stakeholders')", item_id="nav-stakeholders"),
+                _sidebar_item("accounts", "Collection Accounts", "loadModule('/module/accounts', 'Collection Accounts')", item_id="nav-accounts"),
+                _sidebar_item("waterfall", "Waterfall Engine", "loadModule('/module/waterfall', 'Waterfall Engine')", item_id="nav-waterfall"),
+                _sidebar_item("transactions", "Transactions", "loadModule('/module/transactions', 'Transactions')", item_id="nav-transactions"),
+                _sidebar_item("disbursements", "Disbursements", "loadModule('/module/disbursements', 'Disbursements')", item_id="nav-disbursements"),
+                cls="section-body", id="sec-financing",
+            ),
+            cls="sidebar-section collapsible",
         ),
-        # Footer
+        # AI Tools (collapsed by default)
         Div(
+            _section_toggle("AI Tools", "sec-ai-tools"),
+            Div(
+                _sidebar_item("contracts", "Contract Parser", "loadModule('/module/contracts', 'Contract Parser')", item_id="nav-contracts"),
+                _sidebar_item("reports", "Reports", "loadModule('/module/reports', 'Reports')", item_id="nav-reports"),
+                _sidebar_item("forecasting", "Forecasting", "loadModule('/module/forecasting', 'Revenue Forecasting')", item_id="nav-forecasting"),
+                _sidebar_item("anomaly", "Anomaly Detection", "loadModule('/module/anomaly', 'Anomaly Detection')", item_id="nav-anomaly"),
+                cls="section-body", id="sec-ai-tools",
+            ),
+            cls="sidebar-section collapsible",
+        ),
+        # Footer: Guide + Profile + Templates + Logout
+        Div(
+            _sidebar_item("guide", "User Guide", "loadModule('/module/guide', 'User Guide')", item_id="nav-guide"),
+            _sidebar_item("profile", "Profile", "loadModule('/module/profile', 'Profile')", item_id="nav-profile"),
+            _sidebar_item("templates", "Templates", "loadModule('/module/templates', 'Templates')", item_id="nav-templates"),
             _sidebar_item("logout", user.get("display_name", "User") if user else "Login",
                            "window.location.href='/logout'" if user else "window.location.href='/login'"),
             cls="sidebar-footer",
@@ -760,28 +938,37 @@ def _right_pane():
 # Auth Routes
 # ---------------------------------------------------------------------------
 
+def _auth_page(title, parts, error=None):
+    """Shared auth page layout."""
+    els = [H2(title, style="text-align:center; margin-bottom:1.5rem;")]
+    if error:
+        els.append(Div(error, style="color:#dc2626;text-align:center;font-size:0.8rem;margin-bottom:0.5rem;"))
+    els.extend(parts)
+    return Titled(f"AHCAM \u2014 {title}", Style(APP_CSS), Div(*els, cls="auth-container"))
+
+
+def _session_login(session, user):
+    session["user_id"] = user["user_id"]
+    session["email"] = user.get("email", "")
+    session["display_name"] = user.get("display_name", "")
+
+
 @rt("/login", methods=["GET"])
 def login_page(session):
     if session.get("user_id"):
         return RedirectResponse("/", status_code=303)
-    return Titled(
-        "AHCAM \u2014 Login",
-        Style(APP_CSS),
-        Div(
-            H2("Sign In", style="text-align:center; margin-bottom:1.5rem;"),
-            Form(
-                Input(type="email", name="email", placeholder="Email", required=True),
-                Input(type="password", name="password", placeholder="Password", required=True),
-                Button("Sign In", type="submit", cls="auth-btn"),
-                Div(A("Create account", href="/register"), cls="auth-link"),
-                cls="auth-form",
-                method="post",
-                action="/login",
-            ),
-            Div(id="auth-error", style="color:#dc2626;text-align:center;font-size:0.8rem;margin-top:0.5rem;"),
-            cls="auth-container",
-        ),
-    )
+    parts = []
+    if _oauth_enabled:
+        parts.append(_google_btn("Sign in with Google"))
+        parts.append(Div("or", cls="divider"))
+    parts.append(Form(
+        Input(type="email", name="email", placeholder="Email", required=True),
+        Input(type="password", name="password", placeholder="Password", required=True),
+        Button("Sign In", type="submit", cls="auth-btn"),
+        Div(A("Create account", href="/register"), cls="auth-link"),
+        cls="auth-form", method="post", action="/login",
+    ))
+    return _auth_page("Sign In", parts)
 
 
 @rt("/login", methods=["POST"])
@@ -789,27 +976,19 @@ def login_submit(email: str, password: str, session):
     from utils.auth import authenticate
     user = authenticate(email, password)
     if not user:
-        return Titled(
-            "AHCAM \u2014 Login",
-            Style(APP_CSS),
-            Div(
-                H2("Sign In", style="text-align:center; margin-bottom:1.5rem;"),
-                Form(
-                    Input(type="email", name="email", placeholder="Email", value=email, required=True),
-                    Input(type="password", name="password", placeholder="Password", required=True),
-                    Button("Sign In", type="submit", cls="auth-btn"),
-                    Div(A("Create account", href="/register"), cls="auth-link"),
-                    cls="auth-form",
-                    method="post",
-                    action="/login",
-                ),
-                Div("Invalid email or password.", style="color:#dc2626;text-align:center;font-size:0.8rem;margin-top:0.5rem;"),
-                cls="auth-container",
-            ),
-        )
-    session["user_id"] = user["user_id"]
-    session["email"] = user["email"]
-    session["display_name"] = user.get("display_name", "")
+        parts = []
+        if _oauth_enabled:
+            parts.append(_google_btn("Sign in with Google"))
+            parts.append(Div("or", cls="divider"))
+        parts.append(Form(
+            Input(type="email", name="email", placeholder="Email", value=email, required=True),
+            Input(type="password", name="password", placeholder="Password", required=True),
+            Button("Sign In", type="submit", cls="auth-btn"),
+            Div(A("Create account", href="/register"), cls="auth-link"),
+            cls="auth-form", method="post", action="/login",
+        ))
+        return _auth_page("Sign In", parts, error="Invalid email or password.")
+    _session_login(session, user)
     return RedirectResponse("/", status_code=303)
 
 
@@ -817,24 +996,19 @@ def login_submit(email: str, password: str, session):
 def register_page(session):
     if session.get("user_id"):
         return RedirectResponse("/", status_code=303)
-    return Titled(
-        "AHCAM \u2014 Register",
-        Style(APP_CSS),
-        Div(
-            H2("Create Account", style="text-align:center; margin-bottom:1.5rem;"),
-            Form(
-                Input(type="text", name="display_name", placeholder="Name", required=True),
-                Input(type="email", name="email", placeholder="Email", required=True),
-                Input(type="password", name="password", placeholder="Password", required=True, minlength="6"),
-                Button("Create Account", type="submit", cls="auth-btn"),
-                Div(A("Already have an account? Sign in", href="/login"), cls="auth-link"),
-                cls="auth-form",
-                method="post",
-                action="/register",
-            ),
-            cls="auth-container",
-        ),
-    )
+    parts = []
+    if _oauth_enabled:
+        parts.append(_google_btn("Sign up with Google"))
+        parts.append(Div("or", cls="divider"))
+    parts.append(Form(
+        Input(type="text", name="display_name", placeholder="Name", required=True),
+        Input(type="email", name="email", placeholder="Email", required=True),
+        Input(type="password", name="password", placeholder="Password", required=True, minlength="6"),
+        Button("Create Account", type="submit", cls="auth-btn"),
+        Div(A("Already have an account? Sign in", href="/login"), cls="auth-link"),
+        cls="auth-form", method="post", action="/register",
+    ))
+    return _auth_page("Create Account", parts)
 
 
 @rt("/register", methods=["POST"])
@@ -842,34 +1016,237 @@ def register_submit(email: str, password: str, display_name: str, session):
     from utils.auth import create_user
     user = create_user(email, password, display_name=display_name)
     if not user:
-        return Titled(
-            "AHCAM \u2014 Register",
-            Style(APP_CSS),
-            Div(
-                H2("Create Account", style="text-align:center; margin-bottom:1.5rem;"),
-                Form(
-                    Input(type="text", name="display_name", placeholder="Name", value=display_name, required=True),
-                    Input(type="email", name="email", placeholder="Email", value=email, required=True),
-                    Input(type="password", name="password", placeholder="Password", required=True, minlength="6"),
-                    Button("Create Account", type="submit", cls="auth-btn"),
-                    cls="auth-form",
-                    method="post",
-                    action="/register",
-                ),
-                Div("Email already registered.", style="color:#dc2626;text-align:center;font-size:0.8rem;margin-top:0.5rem;"),
-                cls="auth-container",
-            ),
-        )
-    session["user_id"] = user["user_id"]
-    session["email"] = user["email"]
-    session["display_name"] = user.get("display_name", "")
+        parts = []
+        if _oauth_enabled:
+            parts.append(_google_btn("Sign up with Google"))
+            parts.append(Div("or", cls="divider"))
+        parts.append(Form(
+            Input(type="text", name="display_name", placeholder="Name", value=display_name, required=True),
+            Input(type="email", name="email", placeholder="Email", value=email, required=True),
+            Input(type="password", name="password", placeholder="Password", required=True, minlength="6"),
+            Button("Create Account", type="submit", cls="auth-btn"),
+            cls="auth-form", method="post", action="/register",
+        ))
+        return _auth_page("Create Account", parts, error="Email already registered.")
+    _session_login(session, user)
     return RedirectResponse("/", status_code=303)
+
+
+# --- Google OAuth routes ---
+if _oauth_enabled:
+    @rt("/oauth/google")
+    async def oauth_google(request):
+        scheme = request.headers.get("x-forwarded-proto", request.url.scheme)
+        host = request.headers.get("host", request.url.netloc)
+        redirect_uri = f"{scheme}://{host}/auth/callback"
+        return await _authlib_oauth.google.authorize_redirect(request, redirect_uri)
+
+    @rt("/auth/callback")
+    async def auth_callback(request, session):
+        from utils.auth import get_user_by_google_id, get_user_by_email, create_user, link_google_id
+        try:
+            token = await _authlib_oauth.google.authorize_access_token(request)
+        except Exception as e:
+            logger.error(f"OAuth token exchange failed: {e}")
+            return RedirectResponse("/login", status_code=303)
+
+        userinfo = token.get("userinfo", {})
+        if not userinfo:
+            userinfo = await _authlib_oauth.google.userinfo(token=token)
+
+        google_id = userinfo.get("sub", "")
+        email = userinfo.get("email", "")
+        name = userinfo.get("name", "")
+
+        if not email:
+            return RedirectResponse("/login", status_code=303)
+
+        user = get_user_by_google_id(google_id) if google_id else None
+        if not user:
+            user = get_user_by_email(email)
+            if user and google_id:
+                link_google_id(email, google_id)
+            elif not user:
+                user = create_user(email=email, google_id=google_id, display_name=name)
+
+        if user:
+            _session_login(session, user)
+        return RedirectResponse("/", status_code=303)
 
 
 @rt("/logout")
 def logout(session):
     session.clear()
     return RedirectResponse("/login", status_code=303)
+
+
+# ---------------------------------------------------------------------------
+# Profile & Templates Routes
+# ---------------------------------------------------------------------------
+
+@rt("/module/profile")
+def module_profile(session):
+    from utils.auth import get_user_by_id
+    user = get_user_by_id(session.get("user_id")) or {}
+    return Div(
+        H3("Profile"),
+        Form(
+            Div(
+                Label("Display Name"),
+                Input(type="text", name="display_name", value=user.get("display_name", ""), required=True),
+                cls="form-group",
+            ),
+            Div(
+                Label("Email"),
+                Input(type="email", value=user.get("email", ""), disabled=True),
+                cls="form-group",
+            ),
+            Div(
+                Label("Role"),
+                Input(type="text", value=user.get("role", ""), disabled=True),
+                cls="form-group",
+            ),
+            Button("Save", type="submit", cls="module-action-btn"),
+            hx_post="/module/profile/update", hx_target="#center-content", hx_swap="innerHTML",
+            cls="profile-form module-form",
+        ),
+        cls="module-content",
+    )
+
+
+@rt("/module/profile/update", methods=["POST"])
+def profile_update(session, display_name: str):
+    from utils.auth import update_display_name
+    uid = session.get("user_id")
+    if uid and display_name:
+        update_display_name(uid, display_name)
+        session["display_name"] = display_name
+    return Div(
+        Div("Profile updated.", style="color:#16a34a;font-size:0.85rem;margin-bottom:1rem;"),
+        module_profile(session),
+    )
+
+
+@rt("/module/templates")
+def module_templates(session):
+    from sqlalchemy import text
+    from utils.db import get_pool
+    uid = session.get("user_id")
+    try:
+        pool = get_pool()
+        with pool.get_session() as s:
+            rows = s.execute(text("""
+                SELECT template_id, name, prompt, category FROM ahcam.prompt_templates
+                WHERE user_id = :uid OR is_default = TRUE
+                ORDER BY is_default DESC, name
+            """), {"uid": uid}).fetchall()
+    except Exception:
+        rows = []
+
+    cards = []
+    for r in rows:
+        cards.append(Div(
+            Div(Span(r[1], cls="deal-card-title"), Span(r[3], cls="badge-blue"),
+                style="display:flex;justify-content:space-between;align-items:center;"),
+            Div(r[2][:80] + "..." if len(r[2]) > 80 else r[2], cls="deal-card-meta"),
+            cls="deal-card",
+            hx_get=f"/module/template/{r[0]}", hx_target="#center-content", hx_swap="innerHTML",
+        ))
+
+    return Div(
+        Div(
+            H3("Prompt Templates"),
+            Button("+ New Template", hx_get="/module/template/new", hx_target="#center-content", hx_swap="innerHTML", cls="module-action-btn"),
+            style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;",
+        ),
+        *cards if cards else [Div("No templates yet. Create your first prompt template.", cls="empty-state")],
+        cls="module-content",
+    )
+
+
+@rt("/module/template/new")
+def template_new(session):
+    return Div(
+        H3("New Template"),
+        Form(
+            Div(Input(type="text", name="name", placeholder="Template Name", required=True), cls="form-group"),
+            Div(Select(Option("General", value="general"), Option("Waterfall", value="waterfall"),
+                       Option("Report", value="report"), Option("Analysis", value="analysis"),
+                       name="category"), cls="form-group"),
+            Div(Textarea(name="prompt", placeholder="Enter your prompt template...", rows="6", required=True), cls="form-group"),
+            Button("Save Template", type="submit", cls="module-action-btn"),
+            hx_post="/module/template/create", hx_target="#center-content", hx_swap="innerHTML",
+            cls="module-form",
+        ),
+        cls="module-content",
+    )
+
+
+@rt("/module/template/create", methods=["POST"])
+def template_create(session, name: str, prompt: str, category: str = "general"):
+    from sqlalchemy import text as sql_text
+    from utils.db import get_pool
+    try:
+        pool = get_pool()
+        with pool.get_session() as s:
+            s.execute(sql_text("""
+                INSERT INTO ahcam.prompt_templates (user_id, name, prompt, category)
+                VALUES (:uid, :name, :prompt, :cat)
+            """), {"uid": session.get("user_id"), "name": name, "prompt": prompt, "cat": category})
+    except Exception as e:
+        return Div(f"Error: {e}", cls="module-error")
+    return module_templates(session)
+
+
+@rt("/module/template/{template_id}")
+def template_detail(template_id: str, session):
+    from sqlalchemy import text as sql_text
+    from utils.db import get_pool
+    try:
+        pool = get_pool()
+        with pool.get_session() as s:
+            row = s.execute(sql_text("""
+                SELECT template_id, name, prompt, category FROM ahcam.prompt_templates WHERE template_id = :tid
+            """), {"tid": template_id}).fetchone()
+    except Exception:
+        row = None
+    if not row:
+        return Div("Template not found.", cls="module-error")
+    return Div(
+        H3(row[1]),
+        Div(Span(row[3].title(), cls="badge-blue"), style="margin-bottom:1rem;"),
+        Div(
+            Pre(row[2], style="white-space:pre-wrap;background:#f8fafc;padding:1rem;border-radius:8px;border:1px solid #e2e8f0;font-size:0.85rem;"),
+            cls="detail-section",
+        ),
+        Div(
+            Button("Use in Chat", cls="module-action-btn",
+                   onclick=f"fillChat({repr(row[2][:200])})"),
+            Button("\u2190 Back", hx_get="/module/templates", hx_target="#center-content", hx_swap="innerHTML", cls="back-btn", style="margin-left:0.5rem;"),
+            style="margin-top:1rem;",
+        ),
+        cls="module-content",
+    )
+
+
+# --- Placeholder User Guide ---
+@rt("/module/guide")
+def module_guide(session):
+    return Div(
+        H3("User Guide"),
+        P("Welcome to AHCAM. Use the sidebar to navigate modules, or type commands in the AI Assistant chat."),
+        Div(
+            H4("Quick Start"),
+            Ul(
+                Li("Type ", Code("help"), " in the chat to see all available commands"),
+                Li("Click ", Strong("CRM"), " to manage deals, contacts, and sales"),
+                Li("Expand ", Strong("Financing OS"), " for collection accounts, waterfall, and transactions"),
+                Li("Expand ", Strong("AI Tools"), " for contract parsing, forecasting, and anomaly detection"),
+            ),
+            cls="detail-section",
+        ),
+        cls="module-content",
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -886,6 +1263,7 @@ from modules.contracts import register_routes as contracts_routes
 from modules.reports import register_routes as reports_routes
 from modules.forecasting import register_routes as forecasting_routes
 from modules.anomaly import register_routes as anomaly_routes
+from modules.crm import register_routes as crm_routes
 
 productions_routes(rt)
 stakeholders_routes(rt)
@@ -897,6 +1275,7 @@ contracts_routes(rt)
 reports_routes(rt)
 forecasting_routes(rt)
 anomaly_routes(rt)
+crm_routes(rt)
 
 
 # ---------------------------------------------------------------------------
@@ -907,18 +1286,24 @@ anomaly_routes(rt)
 def conv_list(session):
     user_id = session.get("user_id")
     try:
-        convs = list_conversations(user_id=user_id, limit=10)
+        convs = list_conversations(user_id=user_id, limit=20)
     except Exception:
         convs = []
     if not convs:
         return Div(Span("No conversations yet", style="font-size:0.7rem;color:#94a3b8;padding:0.5rem 1rem;display:block;"))
     items = []
-    for c in convs:
+    for i, c in enumerate(convs):
         label = c.get("first_msg") or c.get("title") or "New chat"
         label = label[:40] + "..." if len(label) > 40 else label
-        items.append(Button(label, cls="conv-item",
+        hidden = " hidden" if i >= 3 else ""
+        items.append(Button(label, cls=f"conv-item{hidden}",
                             onclick=f"window.location.href='/?thread={c['thread_id']}'"))
-    return Div(*items)
+    els = list(items)
+    if len(convs) > 3:
+        els.append(Button("More...", cls="conv-more-btn", id="conv-more-btn", onclick="showMoreHistory()"))
+        els.append(Input(type="text", placeholder="Search chats...", cls="conv-search-input",
+                         id="conv-search", style="display:none;", oninput="filterHistory(this.value)"))
+    return Div(*els)
 
 
 # ---------------------------------------------------------------------------
@@ -952,7 +1337,7 @@ def index(session, thread: str = None, new: str = None):
             _left_pane(user),
             Div(
                 Div(
-                    H2("AI Chat", id="center-title"),
+                    H2("AI Assistant", id="center-title"),
                     Div(
                         Button("Inspector", cls="header-btn", onclick="toggleRightPane()"),
                         style="display:flex;gap:0.5rem;",

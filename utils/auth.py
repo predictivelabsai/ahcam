@@ -39,28 +39,30 @@ def _get_pool():
 
 def create_user(
     email: str,
-    password: str,
+    password: Optional[str] = None,
+    google_id: Optional[str] = None,
     display_name: Optional[str] = None,
     role: str = "manager",
 ) -> Optional[Dict]:
     """Create a new user. Returns user dict or None if email already exists."""
     from sqlalchemy import text
 
-    pw_hash = hash_password(password)
+    pw_hash = hash_password(password) if password else None
     pool = _get_pool()
     with pool.get_session() as session:
         result = session.execute(
             text("""
                 INSERT INTO ahcam.users
-                    (email, password_hash, display_name, role)
+                    (email, password_hash, google_id, display_name, role)
                 VALUES
-                    (:email, :pw_hash, :display_name, :role)
+                    (:email, :pw_hash, :google_id, :display_name, :role)
                 ON CONFLICT (email) DO NOTHING
                 RETURNING user_id, email, display_name, role, created_at
             """),
             {
                 "email": email.lower().strip(),
                 "pw_hash": pw_hash,
+                "google_id": google_id,
                 "display_name": display_name or email.split("@")[0],
                 "role": role,
             },
@@ -163,6 +165,55 @@ def decode_jwt_token(token: str) -> Optional[Dict]:
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+def get_user_by_google_id(google_id: str) -> Optional[Dict]:
+    """Fetch a user by Google OAuth ID."""
+    from sqlalchemy import text
+    pool = _get_pool()
+    with pool.get_session() as session:
+        result = session.execute(
+            text("""
+                SELECT user_id, email, password_hash, display_name, role, created_at
+                FROM ahcam.users WHERE google_id = :google_id
+            """),
+            {"google_id": google_id},
+        )
+        row = result.fetchone()
+        if not row:
+            return None
+        return _row_to_user(row, result.keys())
+
+
+def link_google_id(email: str, google_id: str) -> bool:
+    """Link a Google ID to an existing user."""
+    from sqlalchemy import text
+    pool = _get_pool()
+    with pool.get_session() as session:
+        result = session.execute(
+            text("""
+                UPDATE ahcam.users
+                SET google_id = :google_id, updated_at = NOW()
+                WHERE email = :email AND google_id IS NULL
+            """),
+            {"google_id": google_id, "email": email.lower().strip()},
+        )
+        return result.rowcount > 0
+
+
+def update_display_name(user_id: str, display_name: str) -> bool:
+    """Update a user's display name."""
+    from sqlalchemy import text
+    pool = _get_pool()
+    with pool.get_session() as session:
+        result = session.execute(
+            text("""
+                UPDATE ahcam.users SET display_name = :name, updated_at = NOW()
+                WHERE user_id = :uid
+            """),
+            {"name": display_name, "uid": user_id},
+        )
+        return result.rowcount > 0
+
 
 def _row_to_user(row, keys) -> Dict:
     """Convert a DB row to a user dict."""
