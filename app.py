@@ -69,6 +69,7 @@ from modules.reports import generate_report, get_recoupment_position
 from modules.forecasting import generate_forecast
 from modules.anomaly import run_anomaly_scan
 from modules.crm import search_crm_deals, search_crm_contacts
+from modules.documents import search_documents
 
 TOOLS = [
     search_productions, get_production_detail,
@@ -82,6 +83,7 @@ TOOLS = [
     generate_forecast,
     run_anomaly_scan,
     search_crm_deals, search_crm_contacts,
+    search_documents,
 ]
 
 langgraph_agent = create_react_agent(model=llm, tools=TOOLS, prompt=SYSTEM_PROMPT)
@@ -651,12 +653,28 @@ html, body { height: 100vh; overflow: hidden; }
 .profile-form .form-group { margin-bottom: 0.75rem; }
 .profile-form label { font-size: 0.75rem; color: #64748b; font-weight: 600; display: block; margin-bottom: 0.25rem; }
 
+/* === Document Viewer Pane === */
+.doc-viewer-pane {
+  position: fixed; top: 0; right: -50vw; width: 50vw; height: 100vh;
+  background: #fff; border-left: 1px solid #e2e8f0;
+  box-shadow: -4px 0 24px rgba(0,0,0,.08); z-index: 200;
+  display: flex; flex-direction: column;
+  transition: right 0.3s ease;
+}
+.doc-viewer-pane.open { right: 0; }
+.doc-viewer-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem 1rem; border-bottom: 1px solid #e2e8f0; gap: 0.5rem;
+}
+.doc-viewer-iframe { flex: 1; width: 100%; border: none; }
+
 /* === Responsive === */
 @media (max-width: 768px) {
   .app-layout { grid-template-columns: 1fr !important; }
   .left-pane { display: none; }
   .right-pane { display: none; }
   .kanban-board { flex-direction: column; }
+  .doc-viewer-pane { width: 100vw; right: -100vw; }
 }
 """
 
@@ -766,6 +784,7 @@ _ICONS = {
     "forecasting": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
     "anomaly": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
     "crm": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>',
+    "documents": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>',
     "guide": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>',
     "profile": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
     "templates": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
@@ -868,9 +887,10 @@ def _left_pane(user=None):
             ),
             cls="sidebar-section",
         ),
-        # CRM (always visible)
+        # CRM + Documents (always visible)
         Div(
             _sidebar_item("crm", "CRM", "loadModule('/module/crm', 'CRM')", item_id="nav-crm"),
+            _sidebar_item("documents", "Documents", "loadModule('/module/documents', 'Documents')", item_id="nav-documents"),
             cls="sidebar-section",
             style="padding-top:0;",
         ),
@@ -1264,6 +1284,7 @@ from modules.reports import register_routes as reports_routes
 from modules.forecasting import register_routes as forecasting_routes
 from modules.anomaly import register_routes as anomaly_routes
 from modules.crm import register_routes as crm_routes
+from modules.documents import register_routes as documents_routes
 
 productions_routes(rt)
 stakeholders_routes(rt)
@@ -1276,6 +1297,7 @@ reports_routes(rt)
 forecasting_routes(rt)
 anomaly_routes(rt)
 crm_routes(rt)
+documents_routes(rt)
 
 
 # ---------------------------------------------------------------------------
