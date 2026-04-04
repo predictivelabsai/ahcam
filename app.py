@@ -292,8 +292,9 @@ html, body { height: 100vh; overflow: hidden; }
 }
 
 .sidebar-section {
-  padding: 0.75rem 0;
+  padding: 0.25rem 0;
 }
+.sidebar-section.collapsible { padding: 0; }
 
 .sidebar-section-title {
   padding: 0 1rem 0.5rem;
@@ -392,7 +393,7 @@ html, body { height: 100vh; overflow: hidden; }
   z-index: 10;
 }
 
-/* === Right Pane (Inspector) === */
+/* === Right Pane (Canvas) === */
 .right-pane {
   background: #f8fafc;
   border-left: 1px solid #e2e8f0;
@@ -955,7 +956,7 @@ def _left_pane(user=None):
 def _right_pane():
     return Div(
         Div(
-            H3("Inspector"),
+            H3("Canvas"),
             Button("X", cls="header-btn", onclick="toggleRightPane()"),
             cls="right-header",
         ),
@@ -1450,7 +1451,7 @@ def index(session, thread: str = None, new: str = None):
                 Div(
                     H2("AI Assistant", id="center-title"),
                     Div(
-                        Button("Inspector", cls="header-btn", onclick="toggleRightPane()"),
+                        Button("Canvas", cls="header-btn", onclick="toggleRightPane()"),
                         style="display:flex;gap:0.5rem;",
                     ),
                     cls="center-header",
