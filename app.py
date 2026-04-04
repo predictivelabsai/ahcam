@@ -258,8 +258,13 @@ html, body { height: 100vh; overflow: hidden; }
   border-right: 1px solid #e2e8f0;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
   height: 100vh;
+  overflow: hidden;
+}
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar-logo {
@@ -333,9 +338,9 @@ html, body { height: 100vh; overflow: hidden; }
 }
 
 .sidebar-footer {
-  margin-top: auto;
-  padding: 1rem;
+  padding: 0.5rem 0;
   border-top: 1px solid #e2e8f0;
+  flex-shrink: 0;
 }
 
 /* === Center Pane === */
@@ -344,6 +349,7 @@ html, body { height: 100vh; overflow: hidden; }
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  position: relative;
 }
 
 .center-header {
@@ -375,9 +381,15 @@ html, body { height: 100vh; overflow: hidden; }
 
 #center-content {
   display: none;
-  flex: 1;
   overflow-y: auto;
   padding: 1.5rem;
+  position: absolute;
+  top: 50px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  z-index: 10;
 }
 
 /* === Right Pane (Inspector) === */
@@ -718,18 +730,16 @@ function showTab(tabName) {
     if (content) content.style.display = 'block';
 }
 
-function loadModule(path, title) {
+function loadModule(btn, path, title) {
     var container = document.getElementById('center-content');
     var chatContainer = document.getElementById('center-chat');
-    if (container && chatContainer) {
-        chatContainer.style.display = 'none';
-        container.style.display = 'block';
-        htmx.ajax('GET', path, {target: '#center-content', swap: 'innerHTML'});
-    }
+    if (container) { container.style.display = 'block'; container.style.flex = '1'; container.style.overflow = 'auto'; }
+    if (chatContainer) chatContainer.style.display = 'none';
+    htmx.ajax('GET', path, {target: '#center-content', swap: 'innerHTML'});
     var h = document.getElementById('center-title');
     if (h) h.textContent = title;
     document.querySelectorAll('.sidebar-item').forEach(function(i) { i.classList.remove('active'); });
-    if (event && event.currentTarget) event.currentTarget.classList.add('active');
+    if (btn) btn.classList.add('active');
 }
 
 function showChat() {
@@ -875,56 +885,65 @@ def _left_pane(user=None):
             ),
             cls="sidebar-logo",
         ),
-        # Chat controls
+        # Scrollable middle section
         Div(
-            Button("+ New Chat", cls="new-chat-btn", onclick="window.location.href='/?new=1'"),
-            _sidebar_item("chat", "AI Assistant", "showChat()", item_id="nav-chat", active=True),
-            _help_expanders(),
+            # Chat controls
             Div(
-                Div("Recent Chats", cls="sidebar-section-title"),
-                Div(id="conv-list", hx_get="/agui-conv/list", hx_trigger="load", hx_swap="innerHTML"),
-                cls="conv-section",
+                Button("+ New Chat", cls="new-chat-btn", onclick="window.location.href='/?new=1'"),
+                _sidebar_item("chat", "AI Assistant", "showChat()", item_id="nav-chat", active=True),
+                Div(
+                    Div("Recent Chats", cls="sidebar-section-title"),
+                    Div(id="conv-list", hx_get="/agui-conv/list", hx_trigger="load", hx_swap="innerHTML"),
+                    cls="conv-section",
+                ),
+                cls="sidebar-section",
             ),
-            cls="sidebar-section",
-        ),
-        # CRM + Documents (always visible)
-        Div(
-            _sidebar_item("crm", "CRM", "loadModule('/module/crm', 'CRM')", item_id="nav-crm"),
-            _sidebar_item("documents", "Documents", "loadModule('/module/documents', 'Documents')", item_id="nav-documents"),
-            cls="sidebar-section",
-            style="padding-top:0;",
-        ),
-        # Financing OS (collapsed by default)
-        Div(
-            _section_toggle("Financing OS", "sec-financing"),
+            # CRM + Documents (always visible)
             Div(
-                _sidebar_item("productions", "Productions", "loadModule('/module/productions', 'Productions')", item_id="nav-productions"),
-                _sidebar_item("stakeholders", "Stakeholders", "loadModule('/module/stakeholders', 'Stakeholders')", item_id="nav-stakeholders"),
-                _sidebar_item("accounts", "Collection Accounts", "loadModule('/module/accounts', 'Collection Accounts')", item_id="nav-accounts"),
-                _sidebar_item("waterfall", "Waterfall Engine", "loadModule('/module/waterfall', 'Waterfall Engine')", item_id="nav-waterfall"),
-                _sidebar_item("transactions", "Transactions", "loadModule('/module/transactions', 'Transactions')", item_id="nav-transactions"),
-                _sidebar_item("disbursements", "Disbursements", "loadModule('/module/disbursements', 'Disbursements')", item_id="nav-disbursements"),
-                cls="section-body", id="sec-financing",
+                _sidebar_item("crm", "CRM", "loadModule(this,'/module/crm', 'CRM')", item_id="nav-crm"),
+                _sidebar_item("documents", "Documents", "loadModule(this,'/module/documents', 'Documents')", item_id="nav-documents"),
+                cls="sidebar-section",
+                style="padding-top:0;",
             ),
-            cls="sidebar-section collapsible",
-        ),
-        # AI Tools (collapsed by default)
-        Div(
-            _section_toggle("AI Tools", "sec-ai-tools"),
+            # Financing OS (collapsed by default)
             Div(
-                _sidebar_item("contracts", "Contract Parser", "loadModule('/module/contracts', 'Contract Parser')", item_id="nav-contracts"),
-                _sidebar_item("reports", "Reports", "loadModule('/module/reports', 'Reports')", item_id="nav-reports"),
-                _sidebar_item("forecasting", "Forecasting", "loadModule('/module/forecasting', 'Revenue Forecasting')", item_id="nav-forecasting"),
-                _sidebar_item("anomaly", "Anomaly Detection", "loadModule('/module/anomaly', 'Anomaly Detection')", item_id="nav-anomaly"),
-                cls="section-body", id="sec-ai-tools",
+                _section_toggle("Financing OS", "sec-financing"),
+                Div(
+                    _sidebar_item("productions", "Productions", "loadModule(this,'/module/productions', 'Productions')", item_id="nav-productions"),
+                    _sidebar_item("stakeholders", "Stakeholders", "loadModule(this,'/module/stakeholders', 'Stakeholders')", item_id="nav-stakeholders"),
+                    _sidebar_item("accounts", "Collection Accounts", "loadModule(this,'/module/accounts', 'Collection Accounts')", item_id="nav-accounts"),
+                    _sidebar_item("waterfall", "Waterfall Engine", "loadModule(this,'/module/waterfall', 'Waterfall Engine')", item_id="nav-waterfall"),
+                    _sidebar_item("transactions", "Transactions", "loadModule(this,'/module/transactions', 'Transactions')", item_id="nav-transactions"),
+                    _sidebar_item("disbursements", "Disbursements", "loadModule(this,'/module/disbursements', 'Disbursements')", item_id="nav-disbursements"),
+                    cls="section-body", id="sec-financing",
+                ),
+                cls="sidebar-section collapsible",
             ),
-            cls="sidebar-section collapsible",
+            # AI Tools (collapsed by default)
+            Div(
+                _section_toggle("AI Tools", "sec-ai-tools"),
+                Div(
+                    _sidebar_item("contracts", "Contract Parser", "loadModule(this,'/module/contracts', 'Contract Parser')", item_id="nav-contracts"),
+                    _sidebar_item("reports", "Reports", "loadModule(this,'/module/reports', 'Reports')", item_id="nav-reports"),
+                    _sidebar_item("forecasting", "Forecasting", "loadModule(this,'/module/forecasting', 'Revenue Forecasting')", item_id="nav-forecasting"),
+                    _sidebar_item("anomaly", "Anomaly Detection", "loadModule(this,'/module/anomaly', 'Anomaly Detection')", item_id="nav-anomaly"),
+                    cls="section-body", id="sec-ai-tools",
+                ),
+                cls="sidebar-section collapsible",
+            ),
+            # Shortcuts (collapsed by default)
+            Div(
+                _section_toggle("Shortcuts", "sec-shortcuts"),
+                Div(_help_expanders(), cls="section-body", id="sec-shortcuts"),
+                cls="sidebar-section collapsible",
+            ),
+            cls="sidebar-scroll",
         ),
-        # Footer: Guide + Profile + Templates + Logout
+        # Pinned footer: Guide + Profile + Templates + Logout
         Div(
-            _sidebar_item("guide", "User Guide", "loadModule('/module/guide', 'User Guide')", item_id="nav-guide"),
-            _sidebar_item("profile", "Profile", "loadModule('/module/profile', 'Profile')", item_id="nav-profile"),
-            _sidebar_item("templates", "Templates", "loadModule('/module/templates', 'Templates')", item_id="nav-templates"),
+            _sidebar_item("guide", "User Guide", "loadModule(this,'/module/guide', 'User Guide')", item_id="nav-guide"),
+            _sidebar_item("profile", "Profile", "loadModule(this,'/module/profile', 'Profile')", item_id="nav-profile"),
+            _sidebar_item("templates", "Templates", "loadModule(this,'/module/templates', 'Templates')", item_id="nav-templates"),
             _sidebar_item("logout", user.get("display_name", "User") if user else "Login",
                            "window.location.href='/logout'" if user else "window.location.href='/login'"),
             cls="sidebar-footer",
