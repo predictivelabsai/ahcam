@@ -666,6 +666,28 @@ html, body { height: 100vh; overflow: hidden; }
 .profile-form .form-group { margin-bottom: 0.75rem; }
 .profile-form label { font-size: 0.75rem; color: #64748b; font-weight: 600; display: block; margin-bottom: 0.25rem; }
 
+/* === WYSIWYG Editor === */
+.wysiwyg-wrap { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-top: 0.5rem; }
+.editor-toolbar {
+  display: flex; gap: 2px; padding: 0.35rem 0.5rem;
+  background: #f8fafc; border-bottom: 1px solid #e2e8f0;
+}
+.editor-btn {
+  padding: 0.25rem 0.5rem; border: 1px solid #e2e8f0; border-radius: 4px;
+  background: #fff; cursor: pointer; font-size: 0.75rem; font-weight: 600;
+  color: #475569; min-width: 28px; text-align: center;
+}
+.editor-btn:hover { background: #0066cc; color: #fff; border-color: #0066cc; }
+.wysiwyg-editor {
+  min-height: 280px; padding: 1rem; font-size: 0.85rem; line-height: 1.7;
+  color: #1e293b; background: #fff; outline: none; overflow-y: auto;
+  max-height: 500px; white-space: pre-wrap; font-family: inherit;
+}
+.wysiwyg-editor:focus { box-shadow: inset 0 0 0 2px rgba(0,102,204,0.1); }
+.wysiwyg-editor h1, .wysiwyg-editor h2, .wysiwyg-editor h3 { margin: 0.75rem 0 0.25rem; font-weight: 700; }
+.wysiwyg-editor ul, .wysiwyg-editor ol { padding-left: 1.5rem; }
+.wysiwyg-editor li { margin: 0.15rem 0; }
+
 /* === Document Viewer Pane === */
 .doc-viewer-pane {
   position: fixed; top: 0; right: -50vw; width: 50vw; height: 100vh;
@@ -1237,28 +1259,134 @@ def profile_update(session, display_name: str):
     )
 
 
+def _ensure_default_prompts():
+    """Load default prompts from prompts/ directory into DB if not already present."""
+    from sqlalchemy import text as sql_text
+    from utils.db import get_pool
+    from pathlib import Path
+    prompts_dir = Path(__file__).parent / "prompts"
+    if not prompts_dir.exists():
+        return
+    try:
+        pool = get_pool()
+        with pool.get_session() as s:
+            for f in sorted(prompts_dir.glob("*.md")):
+                name = f.stem.replace("_", " ").title()
+                existing = s.execute(sql_text(
+                    "SELECT template_id FROM ahcam.prompt_templates WHERE source_file = :sf"
+                ), {"sf": f.name}).fetchone()
+                if not existing:
+                    content = f.read_text(encoding="utf-8")
+                    category = "system" if "system" in f.stem else "business"
+                    s.execute(sql_text("""
+                        INSERT INTO ahcam.prompt_templates
+                            (name, prompt, category, is_default, source_file)
+                        VALUES (:name, :prompt, :cat, TRUE, :sf)
+                    """), {"name": name, "prompt": content, "cat": category, "sf": f.name})
+    except Exception:
+        pass
+
+
+def _wysiwyg_editor(content: str = "", field_name: str = "prompt"):
+    """Return a rich text editor using EasyMDE (markdown WYSIWYG)."""
+    editor_id = f"editor-{field_name}"
+    return Div(
+        Textarea(content, name=field_name, id=editor_id, rows="14",
+                 style="display:none;"),
+        Div(id=f"toolbar-{field_name}", cls="editor-toolbar"),
+        Div(content, id=f"editable-{field_name}", cls="wysiwyg-editor",
+            contenteditable="true"),
+        Script(f"""
+            (function() {{
+                var editable = document.getElementById('editable-{field_name}');
+                var textarea = document.getElementById('{editor_id}');
+                if (!editable || !textarea) return;
+
+                // Sync contenteditable -> hidden textarea on input
+                editable.addEventListener('input', function() {{
+                    textarea.value = editable.innerText;
+                }});
+
+                // Sync on form submit
+                var form = textarea.closest('form');
+                if (form) {{
+                    form.addEventListener('htmx:configRequest', function() {{
+                        textarea.value = editable.innerText;
+                    }});
+                    form.addEventListener('submit', function() {{
+                        textarea.value = editable.innerText;
+                    }});
+                }}
+
+                // Initial sync
+                textarea.value = editable.innerText;
+
+                // Toolbar buttons
+                var toolbar = document.getElementById('toolbar-{field_name}');
+                if (toolbar) {{
+                    var cmds = [
+                        ['Bold', 'bold', 'B'],
+                        ['Italic', 'italic', 'I'],
+                        ['Heading', 'formatBlock', 'H'],
+                        ['List', 'insertUnorderedList', '\\u2022'],
+                        ['Numbered', 'insertOrderedList', '1.'],
+                    ];
+                    cmds.forEach(function(c) {{
+                        var btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.title = c[0];
+                        btn.textContent = c[2];
+                        btn.className = 'editor-btn';
+                        btn.onclick = function(e) {{
+                            e.preventDefault();
+                            if (c[1] === 'formatBlock') {{
+                                document.execCommand(c[1], false, 'h3');
+                            }} else {{
+                                document.execCommand(c[1], false, null);
+                            }}
+                            textarea.value = editable.innerText;
+                        }};
+                        toolbar.appendChild(btn);
+                    }});
+                }}
+            }})();
+        """),
+        cls="wysiwyg-wrap",
+    )
+
+
 @rt("/module/templates")
 def module_templates(session):
     from sqlalchemy import text
     from utils.db import get_pool
+    _ensure_default_prompts()
     uid = session.get("user_id")
     try:
         pool = get_pool()
         with pool.get_session() as s:
             rows = s.execute(text("""
-                SELECT template_id, name, prompt, category FROM ahcam.prompt_templates
-                WHERE user_id = :uid OR is_default = TRUE
-                ORDER BY is_default DESC, name
+                SELECT t.template_id, t.name, t.prompt, t.category, t.is_default, t.source_file,
+                       (SELECT COUNT(*) FROM ahcam.prompt_versions v WHERE v.template_id = t.template_id) AS versions
+                FROM ahcam.prompt_templates t
+                WHERE t.user_id = :uid OR t.is_default = TRUE
+                ORDER BY t.is_default DESC, t.category, t.name
             """), {"uid": uid}).fetchall()
     except Exception:
         rows = []
 
     cards = []
     for r in rows:
+        version_badge = f"v{r[6]}" if r[6] > 0 else "v1"
+        default_badge = Span("Default", cls="badge-green", style="margin-left:0.25rem;") if r[4] else ""
         cards.append(Div(
-            Div(Span(r[1], cls="deal-card-title"), Span(r[3], cls="badge-blue"),
-                style="display:flex;justify-content:space-between;align-items:center;"),
-            Div(r[2][:80] + "..." if len(r[2]) > 80 else r[2], cls="deal-card-meta"),
+            Div(
+                Div(Span(r[1], cls="deal-card-title"), default_badge,
+                    style="display:flex;align-items:center;gap:0.25rem;"),
+                Div(Span(r[3].title(), cls="badge-blue"), Span(version_badge, cls="badge-amber", style="margin-left:0.25rem;"),
+                    style="display:flex;gap:0.25rem;"),
+                style="display:flex;justify-content:space-between;align-items:center;",
+            ),
+            Div(r[2][:100] + "..." if len(r[2]) > 100 else r[2], cls="deal-card-meta"),
             cls="deal-card",
             hx_get=f"/module/template/{r[0]}", hx_target="#center-content", hx_swap="innerHTML",
         ))
@@ -1269,7 +1397,7 @@ def module_templates(session):
             Button("+ New Template", hx_get="/module/template/new", hx_target="#center-content", hx_swap="innerHTML", cls="module-action-btn"),
             style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;",
         ),
-        *cards if cards else [Div("No templates yet. Create your first prompt template.", cls="empty-state")],
+        *cards if cards else [Div("No templates yet.", cls="empty-state")],
         cls="module-content",
     )
 
@@ -1279,12 +1407,16 @@ def template_new(session):
     return Div(
         H3("New Template"),
         Form(
-            Div(Input(type="text", name="name", placeholder="Template Name", required=True), cls="form-group"),
-            Div(Select(Option("General", value="general"), Option("Waterfall", value="waterfall"),
-                       Option("Report", value="report"), Option("Analysis", value="analysis"),
-                       name="category"), cls="form-group"),
-            Div(Textarea(name="prompt", placeholder="Enter your prompt template...", rows="6", required=True), cls="form-group"),
-            Button("Save Template", type="submit", cls="module-action-btn"),
+            Div(
+                Div(Input(type="text", name="name", placeholder="Template Name", required=True), cls="form-group"),
+                Div(Select(Option("System", value="system"), Option("Business", value="business"),
+                           Option("Waterfall", value="waterfall"), Option("Report", value="report"),
+                           Option("Analysis", value="analysis"), Option("General", value="general"),
+                           name="category"), cls="form-group"),
+                cls="form-row",
+            ),
+            _wysiwyg_editor("", "prompt"),
+            Button("Save Template", type="submit", cls="module-action-btn", style="margin-top:1rem;"),
             hx_post="/module/template/create", hx_target="#center-content", hx_swap="innerHTML",
             cls="module-form",
         ),
@@ -1299,10 +1431,17 @@ def template_create(session, name: str, prompt: str, category: str = "general"):
     try:
         pool = get_pool()
         with pool.get_session() as s:
-            s.execute(sql_text("""
+            row = s.execute(sql_text("""
                 INSERT INTO ahcam.prompt_templates (user_id, name, prompt, category)
                 VALUES (:uid, :name, :prompt, :cat)
-            """), {"uid": session.get("user_id"), "name": name, "prompt": prompt, "cat": category})
+                RETURNING template_id
+            """), {"uid": session.get("user_id"), "name": name, "prompt": prompt, "cat": category}).fetchone()
+            # Save initial version
+            if row:
+                s.execute(sql_text("""
+                    INSERT INTO ahcam.prompt_versions (template_id, version, prompt, change_summary, created_by)
+                    VALUES (:tid, 1, :prompt, 'Initial version', :uid)
+                """), {"tid": str(row[0]), "prompt": prompt, "uid": session.get("user_id")})
     except Exception as e:
         return Div(f"Error: {e}", cls="module-error")
     return module_templates(session)
@@ -1316,27 +1455,165 @@ def template_detail(template_id: str, session):
         pool = get_pool()
         with pool.get_session() as s:
             row = s.execute(sql_text("""
+                SELECT template_id, name, prompt, category, is_default, source_file
+                FROM ahcam.prompt_templates WHERE template_id = :tid
+            """), {"tid": template_id}).fetchone()
+            versions = s.execute(sql_text("""
+                SELECT version_id, version, change_summary, created_at
+                FROM ahcam.prompt_versions
+                WHERE template_id = :tid ORDER BY version DESC LIMIT 10
+            """), {"tid": template_id}).fetchall()
+    except Exception:
+        row, versions = None, []
+    if not row:
+        return Div("Template not found.", cls="module-error")
+
+    version_rows = []
+    for v in versions:
+        version_rows.append(Tr(
+            Td(f"v{v[1]}"), Td(v[2] or "\u2014"), Td(str(v[3])[:16] if v[3] else "\u2014"),
+            Td(A("Restore", hx_post=f"/module/template/restore/{template_id}/{v[0]}",
+                  hx_target="#center-content", hx_swap="innerHTML",
+                  style="color:#0066cc;cursor:pointer;font-size:0.75rem;")),
+        ))
+
+    return Div(
+        Div(
+            H3(row[1]),
+            Div(
+                Button("Edit", hx_get=f"/module/template/edit/{template_id}", hx_target="#center-content", hx_swap="innerHTML", cls="module-action-btn"),
+                Button("Use in Chat", cls="module-action-btn",
+                       onclick=f"fillChat({repr(row[2][:200])})", style="margin-left:0.25rem;"),
+                Button("\u2190 Back", hx_get="/module/templates", hx_target="#center-content", hx_swap="innerHTML", cls="back-btn", style="margin-left:0.25rem;"),
+            ),
+            style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;",
+        ),
+        Div(Span(row[3].title(), cls="badge-blue"),
+            Span("Default", cls="badge-green", style="margin-left:0.25rem;") if row[4] else "",
+            Span(f"Source: {row[5]}", cls="badge-amber", style="margin-left:0.25rem;") if row[5] else "",
+            style="margin-bottom:1rem;"),
+        Div(Pre(row[2], cls="waterfall-result-pre"), cls="detail-section"),
+        Div(
+            H4("Version History"),
+            Table(
+                Thead(Tr(Th("Version"), Th("Change"), Th("Date"), Th(""))),
+                Tbody(*version_rows) if version_rows else Tbody(Tr(Td("No versions recorded", colspan="4"))),
+                cls="module-table",
+            ),
+            cls="detail-section", style="margin-top:1.5rem;",
+        ),
+        cls="module-content",
+    )
+
+
+@rt("/module/template/edit/{template_id}")
+def template_edit(template_id: str, session):
+    from sqlalchemy import text as sql_text
+    from utils.db import get_pool
+    try:
+        pool = get_pool()
+        with pool.get_session() as s:
+            row = s.execute(sql_text("""
                 SELECT template_id, name, prompt, category FROM ahcam.prompt_templates WHERE template_id = :tid
             """), {"tid": template_id}).fetchone()
     except Exception:
         row = None
     if not row:
         return Div("Template not found.", cls="module-error")
+
     return Div(
-        H3(row[1]),
-        Div(Span(row[3].title(), cls="badge-blue"), style="margin-bottom:1rem;"),
-        Div(
-            Pre(row[2], style="white-space:pre-wrap;background:#f8fafc;padding:1rem;border-radius:8px;border:1px solid #e2e8f0;font-size:0.85rem;"),
-            cls="detail-section",
-        ),
-        Div(
-            Button("Use in Chat", cls="module-action-btn",
-                   onclick=f"fillChat({repr(row[2][:200])})"),
-            Button("\u2190 Back", hx_get="/module/templates", hx_target="#center-content", hx_swap="innerHTML", cls="back-btn", style="margin-left:0.5rem;"),
-            style="margin-top:1rem;",
+        H3(f"Edit: {row[1]}"),
+        Form(
+            Hidden(name="template_id", value=template_id),
+            Div(
+                Div(Input(type="text", name="name", value=row[1], required=True), cls="form-group"),
+                Div(Select(
+                    *[Option(c.title(), value=c, selected=(c == row[3]))
+                      for c in ["system", "business", "waterfall", "report", "analysis", "general"]],
+                    name="category"), cls="form-group"),
+                cls="form-row",
+            ),
+            _wysiwyg_editor(row[2], "prompt"),
+            Div(Input(type="text", name="change_summary", placeholder="Change summary (e.g., Updated business rules for guild residuals)"),
+                cls="form-group", style="margin-top:0.75rem;"),
+            Div(
+                Button("Save Changes", type="submit", cls="module-action-btn"),
+                Button("Cancel", hx_get=f"/module/template/{template_id}", hx_target="#center-content", hx_swap="innerHTML", cls="back-btn", style="margin-left:0.5rem;"),
+                style="margin-top:1rem;",
+            ),
+            hx_post="/module/template/update", hx_target="#center-content", hx_swap="innerHTML",
+            cls="module-form",
         ),
         cls="module-content",
     )
+
+
+@rt("/module/template/update", methods=["POST"])
+def template_update(session, template_id: str, name: str, prompt: str,
+                    category: str = "general", change_summary: str = ""):
+    from sqlalchemy import text as sql_text
+    from utils.db import get_pool
+    try:
+        pool = get_pool()
+        with pool.get_session() as s:
+            # Get current version number
+            max_ver = s.execute(sql_text("""
+                SELECT COALESCE(MAX(version), 0) FROM ahcam.prompt_versions WHERE template_id = :tid
+            """), {"tid": template_id}).scalar()
+            new_ver = max_ver + 1
+
+            # Update template
+            s.execute(sql_text("""
+                UPDATE ahcam.prompt_templates
+                SET name = :name, prompt = :prompt, category = :cat, updated_at = NOW()
+                WHERE template_id = :tid
+            """), {"tid": template_id, "name": name, "prompt": prompt, "cat": category})
+
+            # Save version
+            s.execute(sql_text("""
+                INSERT INTO ahcam.prompt_versions (template_id, version, prompt, change_summary, created_by)
+                VALUES (:tid, :ver, :prompt, :summary, :uid)
+            """), {"tid": template_id, "ver": new_ver, "prompt": prompt,
+                   "summary": change_summary or f"Updated to v{new_ver}", "uid": session.get("user_id")})
+    except Exception as e:
+        return Div(f"Error: {e}", cls="module-error")
+    return template_detail(template_id, session)
+
+
+@rt("/module/template/restore/{template_id}/{version_id}", methods=["POST"])
+def template_restore(template_id: str, version_id: str, session):
+    from sqlalchemy import text as sql_text
+    from utils.db import get_pool
+    try:
+        pool = get_pool()
+        with pool.get_session() as s:
+            # Get version content
+            ver = s.execute(sql_text("""
+                SELECT version, prompt FROM ahcam.prompt_versions WHERE version_id = :vid
+            """), {"vid": version_id}).fetchone()
+            if not ver:
+                return Div("Version not found.", cls="module-error")
+
+            # Get current max version
+            max_ver = s.execute(sql_text("""
+                SELECT COALESCE(MAX(version), 0) FROM ahcam.prompt_versions WHERE template_id = :tid
+            """), {"tid": template_id}).scalar()
+
+            # Update template with restored content
+            s.execute(sql_text("""
+                UPDATE ahcam.prompt_templates SET prompt = :prompt, updated_at = NOW()
+                WHERE template_id = :tid
+            """), {"tid": template_id, "prompt": ver[1]})
+
+            # Record restore as new version
+            s.execute(sql_text("""
+                INSERT INTO ahcam.prompt_versions (template_id, version, prompt, change_summary, created_by)
+                VALUES (:tid, :ver, :prompt, :summary, :uid)
+            """), {"tid": template_id, "ver": max_ver + 1, "prompt": ver[1],
+                   "summary": f"Restored from v{ver[0]}", "uid": session.get("user_id")})
+    except Exception as e:
+        return Div(f"Error: {e}", cls="module-error")
+    return template_detail(template_id, session)
 
 
 # --- Placeholder User Guide ---
