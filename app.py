@@ -823,6 +823,15 @@ _ICONS = {
     "templates": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>',
     "chevron": '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>',
     "logout": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+    "financial_overview": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>',
+    "distribution_agreements": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3 3 3-3"/></svg>',
+    "bank_accounts": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M12 3l9 7H3l9-7z"/><path d="M5 10v8"/><path d="M19 10v8"/><path d="M9 10v8"/><path d="M15 10v8"/></svg>',
+    "cgr_reports": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 118 2.83"/><path d="M22 12A10 10 0 0012 2v10z"/></svg>',
+    "receipts": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><path d="M8 10h8"/><path d="M8 14h4"/></svg>',
+    "outstanding": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+    "sales_matrix": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>',
+    "avails": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
+    "statements": '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>',
 }
 
 
@@ -928,17 +937,31 @@ def _left_pane(user=None):
                 cls="sidebar-section",
                 style="padding-top:0;",
             ),
-            # Financing OS (collapsed by default)
+            # Collections OS (collapsed by default)
             Div(
-                _section_toggle("Financing OS", "sec-financing"),
+                _section_toggle("Collections OS", "sec-collections"),
                 Div(
+                    _sidebar_item("financial_overview", "Financial Overview", "loadModule(this,'/module/financial-overview', 'Financial Overview')", item_id="nav-financial-overview"),
                     _sidebar_item("productions", "Productions", "loadModule(this,'/module/productions', 'Productions')", item_id="nav-productions"),
                     _sidebar_item("stakeholders", "Stakeholders", "loadModule(this,'/module/stakeholders', 'Stakeholders')", item_id="nav-stakeholders"),
                     _sidebar_item("accounts", "Collection Accounts", "loadModule(this,'/module/accounts', 'Collection Accounts')", item_id="nav-accounts"),
-                    _sidebar_item("waterfall", "Waterfall Engine", "loadModule(this,'/module/waterfall', 'Waterfall Engine')", item_id="nav-waterfall"),
-                    _sidebar_item("transactions", "Transactions", "loadModule(this,'/module/transactions', 'Transactions')", item_id="nav-transactions"),
-                    _sidebar_item("disbursements", "Disbursements", "loadModule(this,'/module/disbursements', 'Disbursements')", item_id="nav-disbursements"),
-                    cls="section-body", id="sec-financing",
+                    _sidebar_item("distribution_agreements", "Distribution Agreements", "loadModule(this,'/module/distribution-agreements', 'Distribution Agreements')", item_id="nav-distribution-agreements"),
+                    _sidebar_item("bank_accounts", "Bank Accounts", "loadModule(this,'/module/bank-accounts', 'Bank Accounts')", item_id="nav-bank-accounts"),
+                    cls="section-body", id="sec-collections",
+                ),
+                cls="sidebar-section collapsible",
+            ),
+            # Reports & Analytics (collapsed by default)
+            Div(
+                _section_toggle("Reports & Analytics", "sec-reports"),
+                Div(
+                    _sidebar_item("cgr_reports", "CGR Reports", "loadModule(this,'/module/cgr-reports', 'CGR Reports')", item_id="nav-cgr-reports"),
+                    _sidebar_item("receipts", "Receipts Reports", "loadModule(this,'/module/receipts-reports', 'Receipts Reports')", item_id="nav-receipts-reports"),
+                    _sidebar_item("outstanding", "Outstanding Reports", "loadModule(this,'/module/outstanding-reports', 'Outstanding Reports')", item_id="nav-outstanding-reports"),
+                    _sidebar_item("sales_matrix", "Sales Matrix", "loadModule(this,'/module/sales-matrix', 'Sales Matrix')", item_id="nav-sales-matrix"),
+                    _sidebar_item("avails", "Avails Matrix", "loadModule(this,'/module/avails', 'Avails Matrix')", item_id="nav-avails"),
+                    _sidebar_item("statements", "Collection Statements", "loadModule(this,'/module/statements', 'Collection Statements')", item_id="nav-statements"),
+                    cls="section-body", id="sec-reports",
                 ),
                 cls="sidebar-section collapsible",
             ),
@@ -1627,7 +1650,7 @@ def module_guide(session):
             Ul(
                 Li("Type ", Code("help"), " in the chat to see all available commands"),
                 Li("Click ", Strong("CRM"), " to manage deals, contacts, and sales"),
-                Li("Expand ", Strong("Financing OS"), " for collection accounts, waterfall, and transactions"),
+                Li("Expand ", Strong("Collections OS"), " for financial overview, collection accounts, and distribution agreements"),
                 Li("Expand ", Strong("AI Tools"), " for contract parsing, forecasting, and anomaly detection"),
             ),
             cls="detail-section",
@@ -1652,6 +1675,17 @@ from modules.forecasting import register_routes as forecasting_routes
 from modules.anomaly import register_routes as anomaly_routes
 from modules.crm import register_routes as crm_routes
 from modules.documents import register_routes as documents_routes
+from modules.financial_overview import register_routes as financial_overview_routes
+from modules.distribution_agreements import register_routes as distribution_agreements_routes
+from modules.bank_accounts import register_routes as bank_accounts_routes
+from modules.cgr_reports import register_routes as cgr_reports_routes
+from modules.outstanding_reports import register_routes as outstanding_reports_routes
+from modules.sales_matrix import register_routes as sales_matrix_routes
+from modules.avails_matrix import register_routes as avails_matrix_routes
+from modules.statements import register_routes as statements_routes
+from modules.title_groups import register_routes as title_groups_routes
+from modules.doc_sharing import register_routes as doc_sharing_routes
+from modules.search import register_routes as search_routes
 
 productions_routes(rt)
 stakeholders_routes(rt)
@@ -1665,6 +1699,30 @@ forecasting_routes(rt)
 anomaly_routes(rt)
 crm_routes(rt)
 documents_routes(rt)
+financial_overview_routes(rt)
+distribution_agreements_routes(rt)
+bank_accounts_routes(rt)
+cgr_reports_routes(rt)
+outstanding_reports_routes(rt)
+sales_matrix_routes(rt)
+avails_matrix_routes(rt)
+statements_routes(rt)
+title_groups_routes(rt)
+doc_sharing_routes(rt)
+search_routes(rt)
+
+
+# ---------------------------------------------------------------------------
+# Placeholder routes for modules not yet implemented
+# ---------------------------------------------------------------------------
+
+@rt("/module/receipts-reports")
+def module_receipts_reports_placeholder(session):
+    return Div(
+        H3("Receipts Reports"),
+        Div("Coming soon — filterable receipts reports with Excel/PDF export.", cls="empty-state"),
+        cls="module-content",
+    )
 
 
 # ---------------------------------------------------------------------------

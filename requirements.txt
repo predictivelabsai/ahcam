@@ -14,3 +14,5 @@ pandas
 numpy
 authlib
 postmarker
+openpyxl
+weasyprint
