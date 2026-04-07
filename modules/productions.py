@@ -623,8 +623,8 @@ def register_routes(rt):
             with pool.get_session() as s:
                 rows = s.execute(text("""
                     SELECT da.territory, COALESCE(s.name, 'Unknown') AS distributor,
-                           da.signature_date, da.term, da.start_date, da.expiry_date,
-                           da.mg_amount, da.mg_paid, da.status
+                           da.signature_date, da.term_years, da.start_date, da.expiry_date,
+                           da.mg_amount, da.mg_paid, da.financial_status
                     FROM ahcam.distribution_agreements da
                     LEFT JOIN ahcam.stakeholders s ON s.stakeholder_id = da.distributor_stakeholder_id
                     WHERE da.production_id = :pid

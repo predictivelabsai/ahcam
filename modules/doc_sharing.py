@@ -193,7 +193,7 @@ def register_routes(rt):
 
     @rt("/module/doc-sharing/create", methods=["POST"])
     async def doc_sharing_create(session, document_name: str, comment: str = "",
-                                  production_ids: list = None):
+                                  production_ids=None):
         if production_ids is None:
             production_ids = []
         if isinstance(production_ids, str):

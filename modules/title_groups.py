@@ -182,7 +182,7 @@ def register_routes(rt):
         )
 
     @rt("/module/title-group/create", methods=["POST"])
-    def title_group_create(session, group_name: str, comment: str = "", production_ids: list = None):
+    def title_group_create(session, group_name: str, comment: str = "", production_ids=None):
         if production_ids is None:
             production_ids = []
         # Ensure it's always a list

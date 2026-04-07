@@ -74,7 +74,7 @@ def register_routes(rt):
                 rows = s.execute(text("""
                     SELECT ba.bank_account_id, ba.beneficiary_name, ba.bank_name,
                            ba.currency, ba.swift_bic, ba.status,
-                           ba.account_number, ba.iban,
+                           ba.account_number_encrypted, ba.iban_encrypted,
                            p.title AS production_title
                     FROM ahcam.beneficiary_bank_accounts ba
                     LEFT JOIN ahcam.productions p ON p.production_id = ba.production_id
@@ -204,7 +204,7 @@ def register_routes(rt):
                 s.execute(text("""
                     INSERT INTO ahcam.beneficiary_bank_accounts
                         (production_id, stakeholder_id, beneficiary_name, bank_name,
-                         bank_address, account_number, iban, swift_bic, currency,
+                         bank_address, account_number_encrypted, iban_encrypted, swift_bic, currency,
                          status, created_by)
                     VALUES (:pid, :sid, :bname, :bank, :baddr, :acct, :iban, :swift,
                             :currency, 'active', :uid)

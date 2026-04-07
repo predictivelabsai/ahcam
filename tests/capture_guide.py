@@ -28,17 +28,31 @@ PASSWORD = "demo1234"
 PAGES = [
     ("00_login.png",           None,                       "Login page"),
     ("01_welcome.png",         "__after_login__",           "Welcome screen"),
-    ("02_productions.png",     "/module/productions",       "Productions"),
-    ("03_production_new.png",  "/module/production/new",    "New Production form"),
-    ("04_stakeholders.png",    "/module/stakeholders",      "Stakeholders"),
-    ("05_accounts.png",        "/module/accounts",          "Collection Accounts"),
-    ("06_waterfall.png",       "/module/waterfall",         "Waterfall Engine"),
-    ("07_transactions.png",    "/module/transactions",      "Transactions"),
-    ("08_disbursements.png",   "/module/disbursements",     "Disbursements"),
-    ("09_contracts.png",       "/module/contracts",         "Contract Parser"),
-    ("10_reports.png",         "/module/reports",           "Reports"),
-    ("11_forecasting.png",     "/module/forecasting",       "Revenue Forecasting"),
-    ("12_anomaly.png",         "/module/anomaly",           "Anomaly Detection"),
+    # Collections OS
+    ("02_financial_overview.png", "/module/financial-overview", "Financial Overview"),
+    ("03_productions.png",     "/module/productions",       "Productions"),
+    ("04_production_new.png",  "/module/production/new",    "New Production form"),
+    ("05_stakeholders.png",    "/module/stakeholders",      "Stakeholders"),
+    ("06_accounts.png",        "/module/accounts",          "Collection Accounts"),
+    ("07_distribution_agreements.png", "/module/distribution-agreements", "Distribution Agreements"),
+    ("08_bank_accounts.png",   "/module/bank-accounts",     "Bank Accounts"),
+    # Reports & Analytics
+    ("09_cgr_reports.png",     "/module/cgr-reports",       "CGR Reports"),
+    ("10_outstanding.png",     "/module/outstanding-reports","Outstanding Reports"),
+    ("11_sales_matrix.png",    "/module/sales-matrix",      "Sales Matrix"),
+    ("12_avails_matrix.png",   "/module/avails",            "Avails Matrix"),
+    ("13_statements.png",      "/module/statements",        "Collection Statements"),
+    # AI Tools
+    ("14_contracts.png",       "/module/contracts",         "Contract Parser"),
+    ("15_reports.png",         "/module/reports",           "Reports"),
+    ("16_forecasting.png",     "/module/forecasting",       "Revenue Forecasting"),
+    ("17_anomaly.png",         "/module/anomaly",           "Anomaly Detection"),
+    # Supporting
+    ("18_waterfall.png",       "/module/waterfall",         "Waterfall Engine"),
+    ("19_transactions.png",    "/module/transactions",      "Transactions"),
+    ("20_disbursements.png",   "/module/disbursements",     "Disbursements"),
+    ("21_title_groups.png",    "/module/title-groups",      "Title Groups"),
+    ("22_crm.png",             "/module/crm",               "CRM"),
 ]
 
 

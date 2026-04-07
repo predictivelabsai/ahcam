@@ -20,7 +20,7 @@ def search_distribution_agreements(query: str = "") -> str:
             if query:
                 rows = session.execute(text("""
                     SELECT da.agreement_id, p.title, da.territory, da.distributor_name,
-                           da.mg_amount, da.mg_paid, da.status, da.financial_status
+                           da.mg_amount, da.mg_paid, da.financial_status, da.expired
                     FROM ahcam.distribution_agreements da
                     LEFT JOIN ahcam.productions p ON p.production_id = da.production_id
                     WHERE da.territory ILIKE :q OR da.distributor_name ILIKE :q OR p.title ILIKE :q
@@ -29,7 +29,7 @@ def search_distribution_agreements(query: str = "") -> str:
             else:
                 rows = session.execute(text("""
                     SELECT da.agreement_id, p.title, da.territory, da.distributor_name,
-                           da.mg_amount, da.mg_paid, da.status, da.financial_status
+                           da.mg_amount, da.mg_paid, da.financial_status, da.expired
                     FROM ahcam.distribution_agreements da
                     LEFT JOIN ahcam.productions p ON p.production_id = da.production_id
                     ORDER BY da.created_at DESC LIMIT 20
@@ -68,15 +68,15 @@ def register_routes(rt):
                     where_clauses.append("da.distributor_name ILIKE :dist")
                     params["dist"] = f"%{distributor}%"
                 if not show_expired:
-                    where_clauses.append("da.status != 'expired'")
+                    where_clauses.append("da.expired = FALSE")
 
                 where_sql = ("WHERE " + " AND ".join(where_clauses)) if where_clauses else ""
 
                 stats = s.execute(text(f"""
                     SELECT
                         COUNT(*) AS total,
-                        COUNT(*) FILTER (WHERE da.status = 'active') AS active,
-                        COUNT(*) FILTER (WHERE da.status = 'expired') AS expired,
+                        COUNT(*) FILTER (WHERE da.expired = FALSE) AS active,
+                        COUNT(*) FILTER (WHERE da.expired = TRUE) AS expired,
                         COALESCE(SUM(da.mg_amount), 0) AS total_mg
                     FROM ahcam.distribution_agreements da
                 """)).fetchone()
@@ -84,7 +84,7 @@ def register_routes(rt):
                 rows = s.execute(text(f"""
                     SELECT da.agreement_id, p.title, p.production_id, da.territory,
                            da.distributor_name, da.signature_date, da.expiry_date,
-                           da.mg_amount, da.mg_paid, da.financial_status, da.status
+                           da.mg_amount, da.mg_paid, da.financial_status, da.expired
                     FROM ahcam.distribution_agreements da
                     LEFT JOIN ahcam.productions p ON p.production_id = da.production_id
                     {where_sql}
@@ -145,7 +145,7 @@ def register_routes(rt):
             mg_amount = r[7] or 0
             mg_paid = r[8] or 0
             fin_status = r[9] or "pending"
-            status = r[10] or "active"
+            expired = r[10]
 
             # MG progress bar
             pct_mg = min(100, (mg_paid / mg_amount * 100)) if mg_amount > 0 else 0
@@ -215,8 +215,8 @@ def register_routes(rt):
                 row = s.execute(text("""
                     SELECT da.agreement_id, p.title, p.production_id, da.territory,
                            da.distributor_name, da.agreement_type, da.signature_date,
-                           da.expiry_date, da.mg_amount, da.mg_paid, da.currency,
-                           da.financial_status, da.status, da.notes
+                           da.expiry_date, da.mg_amount, da.mg_paid, da.mg_currency,
+                           da.financial_status, da.expired, da.notes
                     FROM ahcam.distribution_agreements da
                     LEFT JOIN ahcam.productions p ON p.production_id = da.production_id
                     WHERE da.agreement_id = :aid
@@ -234,8 +234,8 @@ def register_routes(rt):
         return Div(
             Div(
                 H3(f"{row[1] or 'Unknown'} \u2014 {row[3]}"),
-                Span(row[12].replace("_", " ").title() if row[12] else "Active",
-                     cls=f"status-pill status-{'active' if row[12] == 'active' else 'expired'}"),
+                Span("Expired" if row[12] else "Active",
+                     cls=f"status-pill status-{'expired' if row[12] else 'active'}"),
                 style="display:flex;gap:1rem;align-items:center;margin-bottom:1rem;",
             ),
             Div(
@@ -334,11 +334,11 @@ def register_routes(rt):
                 s.execute(text("""
                     INSERT INTO ahcam.distribution_agreements
                         (production_id, territory, distributor_name, agreement_type,
-                         signature_date, expiry_date, mg_amount, mg_paid, currency,
-                         financial_status, status, notes, created_by)
+                         signature_date, expiry_date, mg_amount, mg_paid, mg_currency,
+                         financial_status, expired, notes, created_by)
                     VALUES (:pid, :territory, :dist, :atype,
                             :sig_date, :exp_date, :mg_amount, 0, :currency,
-                            :fin_status, 'active', :notes, :uid)
+                            :fin_status, FALSE, :notes, :uid)
                 """), {
                     "pid": production_id, "territory": territory,
                     "dist": distributor_name, "atype": agreement_type,

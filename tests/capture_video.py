@@ -130,83 +130,82 @@ async def run():
         await send_chat(page, "stakeholder:search distributor", 3)
         await capture(page, "chat_stakeholders", 1.0)
 
-        # ===== MODULE: Productions =====
+        # ===== COLLECTIONS OS =====
+        await nav_module(page, "/module/financial-overview", "Financial Overview")
+        await capture(page, "module_financial_overview", 1.5)
+
         await nav_module(page, "/module/productions", "Productions")
         await capture(page, "module_productions", 1.5)
 
-        # ===== MODULE: New Production Form =====
-        await nav_module(page, "/module/production/new", "New Production")
-        await capture(page, "module_production_new", 1.0)
+        # Production detail (CAMA tabbed view)
+        prod_id = await page.evaluate("""
+            async () => {
+                const r = await fetch('/module/productions');
+                const html = await r.text();
+                const m = html.match(/hx-get="\\/module\\/production\\/([^"]+)"/);
+                return m ? m[1] : null;
+            }
+        """)
+        if prod_id:
+            await nav_module(page, f"/module/production/{prod_id}", "CAMA Detail")
+            await capture(page, "module_cama_overview", 1.5)
 
-        # ===== MODULE: Stakeholders =====
         await nav_module(page, "/module/stakeholders", "Stakeholders")
         await capture(page, "module_stakeholders", 1.0)
 
-        # ===== MODULE: Collection Accounts =====
         await nav_module(page, "/module/accounts", "Collection Accounts")
         await capture(page, "module_accounts", 1.5)
 
-        # ===== MODULE: Account Detail (first account) =====
-        acct_id = await page.evaluate("""
-            async () => {
-                const r = await fetch('/module/accounts');
-                const html = await r.text();
-                const m = html.match(/hx-get="\\/module\\/account\\/([^"]+)"/);
-                return m ? m[1] : null;
-            }
-        """)
-        if acct_id:
-            await nav_module(page, f"/module/account/{acct_id}", "Account Detail")
-            await capture(page, "module_account_detail", 1.0)
+        await nav_module(page, "/module/distribution-agreements", "Distribution Agreements")
+        await capture(page, "module_distribution_agreements", 1.5)
 
-        # ===== MODULE: Waterfall Engine =====
-        await nav_module(page, "/module/waterfall", "Waterfall Engine")
-        await capture(page, "module_waterfall", 1.5)
+        await nav_module(page, "/module/bank-accounts", "Bank Accounts")
+        await capture(page, "module_bank_accounts", 1.0)
 
-        # ===== MODULE: Waterfall Detail (first production with rules) =====
-        wf_id = await page.evaluate("""
-            async () => {
-                const r = await fetch('/module/waterfall');
-                const html = await r.text();
-                const m = html.match(/hx-get="\\/module\\/waterfall\\/([^"]+)"/);
-                return m ? m[1] : null;
-            }
-        """)
-        if wf_id:
-            await nav_module(page, f"/module/waterfall/{wf_id}", "Waterfall Detail")
-            await capture(page, "module_waterfall_detail", 1.0)
+        # ===== REPORTS & ANALYTICS =====
+        await nav_module(page, "/module/cgr-reports", "CGR Reports")
+        await capture(page, "module_cgr_reports", 1.5)
 
-        # ===== MODULE: Transactions =====
-        await nav_module(page, "/module/transactions", "Transactions")
-        await capture(page, "module_transactions", 1.0)
+        await nav_module(page, "/module/outstanding-reports", "Outstanding Reports")
+        await capture(page, "module_outstanding_reports", 1.0)
 
-        # ===== MODULE: Record Transaction Form =====
-        await nav_module(page, "/module/transaction/new", "Record Transaction")
-        await capture(page, "module_transaction_new", 1.0)
+        await nav_module(page, "/module/sales-matrix", "Sales Matrix")
+        await capture(page, "module_sales_matrix", 1.5)
 
-        # ===== MODULE: Disbursements =====
-        await nav_module(page, "/module/disbursements", "Disbursements")
-        await capture(page, "module_disbursements", 1.0)
+        await nav_module(page, "/module/avails", "Avails Matrix")
+        await capture(page, "module_avails_matrix", 1.5)
 
-        # ===== MODULE: Contract Parser =====
+        await nav_module(page, "/module/statements", "Collection Statements")
+        await capture(page, "module_statements", 1.0)
+
+        # ===== AI TOOLS =====
         await nav_module(page, "/module/contracts", "Contract Parser")
         await capture(page, "module_contracts", 1.0)
 
-        # ===== MODULE: Parse Contract Form =====
-        await nav_module(page, "/module/contract/new", "Parse Contract")
-        await capture(page, "module_contract_new", 1.0)
-
-        # ===== MODULE: Reports =====
         await nav_module(page, "/module/reports", "Reports")
         await capture(page, "module_reports", 1.0)
 
-        # ===== MODULE: Forecasting =====
         await nav_module(page, "/module/forecasting", "Revenue Forecasting")
         await capture(page, "module_forecasting", 1.0)
 
-        # ===== MODULE: Anomaly Detection =====
         await nav_module(page, "/module/anomaly", "Anomaly Detection")
         await capture(page, "module_anomaly", 1.0)
+
+        # ===== SUPPORTING =====
+        await nav_module(page, "/module/waterfall", "Waterfall Engine")
+        await capture(page, "module_waterfall", 1.0)
+
+        await nav_module(page, "/module/transactions", "Transactions")
+        await capture(page, "module_transactions", 1.0)
+
+        await nav_module(page, "/module/disbursements", "Disbursements")
+        await capture(page, "module_disbursements", 1.0)
+
+        await nav_module(page, "/module/title-groups", "Title Groups")
+        await capture(page, "module_title_groups", 1.0)
+
+        await nav_module(page, "/module/crm", "CRM")
+        await capture(page, "module_crm", 1.0)
 
         # ===== BACK TO WELCOME =====
         await page.goto(f"{BASE_URL}/?new=1")
