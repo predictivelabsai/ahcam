@@ -1,0 +1,159 @@
+ID,Category,User Story,Persona,Priority (Must/Should/Could/Won't),Notes/Comments
+US-01,Production Setup,"As a Collection Account Manager, I want to create a new production record with title, type, genre, budget, currency, key personnel, and territory so that all downstream CAM operations are linked to a single production.",P1 - CAM Manager,,
+US-02,Production Setup,"As a Collection Account Manager, I want to track production status (development, pre-production, production, post-production, completed, released) so that I can filter and prioritize active projects.",P1 - CAM Manager,,
+US-03,Production Setup,"As a Finance Administrator, I want to import multiple productions from a spreadsheet or CSV so that I can onboard a slate of titles quickly.",P2 - Finance Admin,,
+US-04,Production Setup,"As a Producer, I want to see all my productions in one dashboard with budget vs. collected revenue so I can track overall portfolio performance.",P6 - Producer,,
+US-05,Stakeholder Management,"As a Collection Account Manager, I want to register stakeholders with their role, company, contact info, and encrypted bank details so that disbursements can be processed accurately.",P1 - CAM Manager,,
+US-06,Stakeholder Management,"As a Collection Account Manager, I want to link stakeholders to productions with a specific role and participation percentage so the waterfall engine knows who gets what.",P1 - CAM Manager,,
+US-07,Stakeholder Management,"As a Financier, I want to view only my own productions, recoupment positions, and statements without seeing other stakeholders' details.",P3 - Financier,,
+US-08,Stakeholder Management,"As a Legal Officer, I want to verify that stakeholder bank details are encrypted at rest and that only authorized users can view them.",P7 - Legal/Compliance,,
+US-09,Collection Accounts,"As a Collection Account Manager, I want to create segregated collection accounts per production with bank details, currency, and status (active/frozen/closed) so that revenue is properly ring-fenced.",P1 - CAM Manager,,
+US-10,Collection Accounts,"As a Collection Account Manager, I want to see real-time balances across all collection accounts in a single dashboard so I can spot issues quickly.",P1 - CAM Manager,,
+US-11,Collection Accounts,"As a Finance Administrator, I want to freeze or close a collection account and prevent further transactions against it.",P2 - Finance Admin,,
+US-12,Collection Accounts,"As a Collection Account Manager, I want to manage multi-currency accounts (USD, EUR, GBP, CAD, AUD, JPY, CNY) and see balances in both local and reporting currencies.",P1 - CAM Manager,,
+US-13,Waterfall Engine,"As a Collection Account Manager, I want to define priority-ordered waterfall rules (percentage, fixed, corridor, residual) with caps, floors, and cross-collateralization groups so that revenue is allocated per the contractual agreement.",P1 - CAM Manager,,
+US-14,Waterfall Engine,"As a Collection Account Manager, I want to execute a waterfall calculation against incoming revenue and see a detailed breakdown of how each dollar was allocated across priorities.",P1 - CAM Manager,,
+US-15,Waterfall Engine,"As a Collection Account Manager, I want to save waterfall templates so I can reuse standard structures across similar productions.",P1 - CAM Manager,,
+US-16,Waterfall Engine,"As a Legal Officer, I want to compare the waterfall rules in the system against the original contract terms to verify accuracy.",P7 - Legal/Compliance,,
+US-17,Waterfall Engine,"As a Financier, I want to see my cumulative recoupment position (total owed, total received, outstanding) updated after each waterfall execution.",P3 - Financier,,
+US-18,Waterfall Engine,"As a Producer, I want to model what-if scenarios by running the waterfall with hypothetical revenue amounts before actual collections arrive.",P6 - Producer,,
+US-19,Transaction Ledger,"As a Collection Account Manager, I want to record incoming payments (inflows) from distributors with amount, currency, source, reference, and description so that all revenue is tracked.",P1 - CAM Manager,,
+US-20,Transaction Ledger,"As a Collection Account Manager, I want every transaction to be immutably hash-chained (SHA-256) so that the ledger cannot be tampered with.",P1 - CAM Manager,,
+US-21,Transaction Ledger,"As a Finance Administrator, I want to reverse a transaction by creating an offsetting entry (not deleting the original) to maintain audit integrity.",P2 - Finance Admin,,
+US-22,Transaction Ledger,"As an External Auditor, I want to verify the hash chain integrity of the entire transaction ledger to confirm no records have been altered.",P8 - External Auditor,,
+US-23,Transaction Ledger,"As a Collection Account Manager, I want to search and filter transactions by production, account, date range, type, and status.",P1 - CAM Manager,,
+US-24,Disbursements,"As a Collection Account Manager, I want to automatically generate disbursement records from waterfall execution so that payouts are calculated without manual work.",P1 - CAM Manager,,
+US-25,Disbursements,"As a Finance Administrator, I want to approve disbursements before they are processed to maintain control over outflows.",P2 - Finance Admin,,
+US-26,Disbursements,"As a Collection Account Manager, I want to track disbursement status (calculated, approved, processing, completed, failed) and see payment references.",P1 - CAM Manager,,
+US-27,Disbursements,"As a Stakeholder, I want to receive notification when a disbursement has been processed in my favor.","P3/P4/P5/P6 - Stakeholders",,
+US-28,Contract Parsing (AI),"As a Collection Account Manager, I want to upload a CAMA PDF and have AI extract the parties, waterfall rules, and key terms automatically.",P1 - CAM Manager,,
+US-29,Contract Parsing (AI),"As a Legal Officer, I want to review and approve AI-extracted contract terms before they become active waterfall rules in the system.",P7 - Legal/Compliance,,
+US-30,Contract Parsing (AI),"As a Collection Account Manager, I want to see a side-by-side view of the original contract text and the AI-extracted data so I can verify accuracy.",P1 - CAM Manager,,
+US-31,Contract Parsing (AI),"As a Finance Administrator, I want to batch-upload multiple contracts and queue them for AI parsing.",P2 - Finance Admin,,
+US-32,Reports & Statements,"As a Collection Account Manager, I want to generate collection account statements showing balances, transaction history, and waterfall positions per production.",P1 - CAM Manager,,
+US-33,Reports & Statements,"As a Financier, I want to receive quarterly recoupment statements showing my position across all my productions.",P3 - Financier,,
+US-34,Reports & Statements,"As a Sales Agent, I want territory-level sales reports showing gross receipts, fees, and net amounts remitted.",P4 - Sales Agent,,
+US-35,Reports & Statements,"As a Finance Administrator, I want to schedule automatic report generation and email delivery on a recurring basis (monthly, quarterly).",P2 - Finance Admin,,
+US-36,Reports & Statements,"As an External Auditor, I want to export the full transaction ledger and waterfall execution history as CSV/PDF for offline review.",P8 - External Auditor,,
+US-37,Reports & Statements,"As a Collection Account Manager, I want a financial overview dashboard with total collected, total disbursed, and pending amounts across all productions.",P1 - CAM Manager,,
+US-38,Distribution & Territory,"As a Sales Agent, I want to track distribution agreements by territory, media type, and deal terms (MG, advance, fee percentage).",P4 - Sales Agent,,
+US-39,Distribution & Territory,"As a Collection Account Manager, I want a sales matrix showing which territories are sold vs. available for each production.",P1 - CAM Manager,,
+US-40,Distribution & Territory,"As a Collection Account Manager, I want an avails matrix showing which media rights (theatrical, home video, streaming, TV) are available by territory.",P1 - CAM Manager,,
+US-41,Distribution & Territory,"As a Sales Agent, I want to track minimum guarantee payments and reconcile them against actual collections.",P4 - Sales Agent,,
+US-42,Revenue Forecasting (AI),"As a Collection Account Manager, I want AI-generated revenue forecasts for each production based on historical data, genre comparables, and territory analysis.",P1 - CAM Manager,,
+US-43,Revenue Forecasting (AI),"As a Financier, I want to see projected recoupment timelines based on revenue forecasts so I can plan my cash flow.",P3 - Financier,,
+US-44,Revenue Forecasting (AI),"As a Producer, I want to compare actual collections against forecasts to understand production performance.",P6 - Producer,,
+US-45,Anomaly Detection (AI),"As a Finance Administrator, I want the system to automatically flag duplicate transactions, unusual payment amounts, and timing irregularities.",P2 - Finance Admin,,
+US-46,Anomaly Detection (AI),"As a Legal Officer, I want to be alerted when a disbursement violates waterfall rules (e.g., paying more than the cap, skipping a priority).",P7 - Legal/Compliance,,
+US-47,Anomaly Detection (AI),"As a Collection Account Manager, I want to review, investigate, and resolve anomaly alerts with notes and status tracking.",P1 - CAM Manager,,
+US-48,CRM & Deal Pipeline,"As a Sales Agent, I want to manage distribution deals through a pipeline (lead, negotiation, term sheet, due diligence, closing, closed) so I can track my sales process.",P4 - Sales Agent,,
+US-49,CRM & Deal Pipeline,"As a Collection Account Manager, I want CRM contacts linked to stakeholder records so that deal contacts automatically become production stakeholders when a deal closes.",P1 - CAM Manager,,
+US-50,CRM & Deal Pipeline,"As a Sales Agent, I want Kanban and list views of my deal pipeline filtered by territory, deal type, and stage.",P4 - Sales Agent,,
+US-51,AI Chat Assistant,"As a Collection Account Manager, I want to ask natural-language questions and get instant answers from the AI assistant.",P1 - CAM Manager,,
+US-52,AI Chat Assistant,"As a Financier, I want to ask the AI about my recoupment position and get a clear answer without navigating multiple screens.",P3 - Financier,,
+US-53,AI Chat Assistant,"As a Collection Account Manager, I want to execute commands via chat as a power-user shortcut.",P1 - CAM Manager,,
+US-54,Security & Compliance,"As a Finance Administrator, I want a complete audit log of every action (who, what, when, before/after values) for compliance.",P2 - Finance Admin,,
+US-55,Security & Compliance,"As a Legal Officer, I want role-based access control so stakeholders can only see data related to their own productions.",P7 - Legal/Compliance,,
+US-56,Security & Compliance,"As an External Auditor, I want to verify the integrity of the transaction ledger hash chain and export it for independent review.",P8 - External Auditor,,
+US-57,Security & Compliance,"As a Finance Administrator, I want all sensitive data encrypted at rest with key rotation capability.",P2 - Finance Admin,,
+US-58,Integration & Workflow,"As a Finance Administrator, I want to import transactions from bank statements (CSV/MT940) to reduce manual data entry.",P2 - Finance Admin,,
+US-59,Integration & Workflow,"As a Collection Account Manager, I want email notifications when key events occur (payment received, disbursement approved, anomaly detected).",P1 - CAM Manager,,
+US-60,Integration & Workflow,"As a Finance Administrator, I want to export data to accounting systems (Xero, QuickBooks, SAP) for general ledger reconciliation.",P2 - Finance Admin,,
+
+Questionnaire Section,Question ID,Question,Relevant Personas
+Personas,Q1.1,"Which persona(s) best describe your role? Are there roles we're missing?",All
+Personas,Q1.2,"How many people at your organization would use this platform, and in which roles?",All
+Personas,Q1.3,"Do different team members need different levels of access to the same production?",All
+Personas,Q1.4,"Do external parties (stakeholders, auditors) need direct platform access, or only reports?",All
+Production Setup,Q2.1,"What information do you capture when setting up a new production? Is our field list sufficient?","P1, P2"
+Production Setup,Q2.2,"Do you manage productions individually or as slates/packages? If slates, how grouped?","P1, P2"
+Production Setup,Q2.3,"What production statuses do you use? Does our lifecycle match yours?","P1, P2"
+Production Setup,Q2.4,"Do you need to track production budgets at a line-item level, or is a single budget figure sufficient?","P1, P2, P6"
+Production Setup,Q2.5,"How do you handle co-productions across multiple territories?","P1, P2, P4"
+Stakeholders,Q3.1,"What stakeholder roles do you work with? Are we missing any?","P1, P2, P7"
+Stakeholders,Q3.2,"How do you currently manage stakeholder bank details? What security/compliance requirements apply?","P1, P2, P7"
+Stakeholders,Q3.3,"Do stakeholders change roles across productions?","P1, P2"
+Stakeholders,Q3.4,"How granular is participation? Single percentage per stakeholder, or different per revenue stream?","P1, P2, P7"
+Stakeholders,Q3.5,"Do stakeholders currently have self-service access, or is everything communicated via reports?","P1, P3, P6"
+Collection Accounts,Q4.1,"How many collection accounts does a typical production have? One or multiple?","P1, P2"
+Collection Accounts,Q4.2,"Do you need automatic bank feed integration, or is manual entry sufficient?","P1, P2"
+Collection Accounts,Q4.3,"How do you handle currency conversion (fixed rate, spot rate, other)?","P1, P2"
+Collection Accounts,Q4.4,"What does freezing an account mean in your workflow? What triggers it?","P1, P2, P7"
+Collection Accounts,Q4.5,"Do you reconcile collection account balances against bank statements? How frequently?","P1, P2, P8"
+Waterfall Engine,Q5.1,"How complex are your typical waterfall structures? How many priority tiers?","P1, P2, P7"
+Waterfall Engine,Q5.2,"How do you handle cross-collateralization? Is this common in your deals?","P1, P2, P3"
+Waterfall Engine,Q5.3,"Do waterfall rules change over time? How do you handle versioning?","P1, P2, P7"
+Waterfall Engine,Q5.4,"Do you need per-transaction, periodic batch, or on-demand waterfall runs?","P1, P2"
+Waterfall Engine,Q5.5,"How do you handle corridor deals? Can you give an example?","P1, P2, P7"
+Waterfall Engine,Q5.6,"Do you need cumulative recoupment tracking across transactions, or independent runs?","P1, P2, P3"
+Waterfall Engine,Q5.7,"Is what-if / scenario modeling critical or nice-to-have?","P1, P6"
+Waterfall Engine,Q5.8,"Do you use waterfall templates across productions, or is every deal bespoke?","P1, P2"
+Transaction Ledger,Q6.1,"What information accompanies a typical incoming payment (territory, media type, exploitation period)?","P1, P2, P5"
+Transaction Ledger,Q6.2,"How important is an immutable audit trail? Is hash-chaining a requirement?","P2, P7, P8"
+Transaction Ledger,Q6.3,"How do you currently handle transaction reversals or corrections?","P1, P2"
+Transaction Ledger,Q6.4,"What transaction statuses do you need beyond pending, confirmed, reversed?","P1, P2"
+Transaction Ledger,Q6.5,"Do you receive payments in batches or individually?","P1, P2, P5"
+Transaction Ledger,Q6.6,"Do you reconcile transactions against distributor sales reports? How?","P1, P2"
+Disbursements,Q7.1,"What is your current disbursement approval workflow? How many approvals needed?","P1, P2"
+Disbursements,Q7.2,"Do you batch disbursements or process as revenue arrives?","P1, P2"
+Disbursements,Q7.3,"How do you execute payments (manual bank transfers, payment APIs, other)?","P1, P2"
+Disbursements,Q7.4,"Do you need to hold back reserves (withholding tax, disputed amounts)?","P1, P2, P7"
+Disbursements,Q7.5,"How do you notify stakeholders of disbursements?","P1, P2, P3"
+Disbursements,Q7.6,"Do you need multi-currency disbursement support?","P1, P2"
+Contract Parsing,Q8.1,"What types of contracts do you need to parse (CAMA, distribution, sales agency, finance, interparty)?","P1, P2, P7"
+Contract Parsing,Q8.2,"How standardized are your contracts — mostly templated or highly bespoke?","P1, P7"
+Contract Parsing,Q8.3,"What key data points do you need extracted from a contract?","P1, P2, P7"
+Contract Parsing,Q8.4,"What is your current process for translating contract terms into waterfall rules? How long?","P1, P7"
+Contract Parsing,Q8.5,"Would you trust AI-extracted data with human review, or does every field need manual verification?","P1, P2, P7"
+Contract Parsing,Q8.6,"Do you work with contracts in languages other than English?","P1, P7"
+Reports & Statements,Q9.1,"What reports do you produce today? Can you share samples or templates?","P1, P2"
+Reports & Statements,Q9.2,"How frequently are reports generated and distributed?","P1, P2, P3"
+Reports & Statements,Q9.3,"What format do stakeholders expect (PDF, Excel, online portal, email)?","P1, P3, P6"
+Reports & Statements,Q9.4,"Do different stakeholders receive different views of the same data?","P1, P2, P3"
+Reports & Statements,Q9.5,"Do you need a CGR (Certified Gross Receipts) report format? What fields?","P1, P2"
+Reports & Statements,Q9.6,"Do you track outstanding/overdue amounts? How is aging calculated?","P1, P2"
+Reports & Statements,Q9.7,"What KPIs or summary metrics matter most on a dashboard?","P1, P2"
+Distribution & Territory,Q10.1,"How do you currently track which territories and media rights are sold vs. available?","P1, P4"
+Distribution & Territory,Q10.2,"What deal terms do you track per distribution agreement?","P1, P4"
+Distribution & Territory,Q10.3,"Do you need to track sub-distribution?","P1, P4"
+Distribution & Territory,Q10.4,"How do you reconcile minimum guarantees against actual revenue?","P1, P4"
+Distribution & Territory,Q10.5,"Do you deal with holdbacks? How are these tracked and released?","P1, P4, P5"
+Revenue Forecasting,Q11.1,"Do you currently forecast revenue? What methodology?","P1, P2, P3"
+Revenue Forecasting,Q11.2,"At what granularity do you forecast (total, territory, media type, quarter)?","P1, P2"
+Revenue Forecasting,Q11.3,"How important are confidence intervals vs. point estimates?","P1, P3"
+Revenue Forecasting,Q11.4,"Would you use forecasts for internal planning or also share with stakeholders?","P1, P2, P3"
+Revenue Forecasting,Q11.5,"What data inputs would make forecasts most useful?","P1, P2"
+Anomaly Detection,Q12.1,"What types of anomalies or errors have you encountered in collection accounting?","P1, P2, P7"
+Anomaly Detection,Q12.2,"How do you currently catch and resolve errors?","P1, P2"
+Anomaly Detection,Q12.3,"What severity levels make sense? What constitutes critical?","P1, P2, P7"
+Anomaly Detection,Q12.4,"Do you need real-time alerting or is periodic scanning sufficient?","P1, P2"
+Anomaly Detection,Q12.5,"Who should be notified of anomalies, and through what channel?","P1, P2, P7"
+CRM & Deals,Q13.1,"Do you currently use a separate CRM system? Would you want integration or replacement?","P1, P4"
+CRM & Deals,Q13.2,"What deal stages do you track? Does our pipeline match yours?","P4"
+CRM & Deals,Q13.3,"What information do you track per deal?","P1, P4"
+CRM & Deals,Q13.4,"Do you need deal approval workflows?","P4, P7"
+CRM & Deals,Q13.5,"Would you want the CRM integrated into the main platform or separate?","P1, P4"
+AI Chat,Q14.1,"What questions do you most frequently need to answer about collection accounts?",All
+AI Chat,Q14.2,"Would you prefer structured commands, natural language, or both?",All
+AI Chat,Q14.3,"How important is chat history / conversation memory?",All
+AI Chat,Q14.4,"Should the AI assistant take actions (create records, run calculations) or only answer questions?",All
+AI Chat,Q14.5,"What level of trust would you place in AI-generated answers for financial data?",All
+Security & Compliance,Q15.1,"What compliance standards apply (SOC 2, GDPR, PCI DSS, local regulations)?","P2, P7, P8"
+Security & Compliance,Q15.2,"What audit requirements do you face? How frequently audited?","P2, P7, P8"
+Security & Compliance,Q15.3,"Do you need two-factor authentication (2FA) or single sign-on (SSO)?","P2, P7"
+Security & Compliance,Q15.4,"What data retention policies apply? How long must records be kept?","P2, P7"
+Security & Compliance,Q15.5,"Do you need IP-based access restrictions or VPN requirements?","P2, P7"
+Security & Compliance,Q15.6,"Are there specific regulatory bodies that oversee CAM in your jurisdiction?","P2, P7"
+Integration,Q16.1,"What systems does your collection accounting currently integrate with?","P1, P2"
+Integration,Q16.2,"How do you currently receive distributor payment data?","P1, P2, P5"
+Integration,Q16.3,"What file formats do you need for import/export?","P1, P2, P8"
+Integration,Q16.4,"Do you need real-time integrations or is batch sufficient?","P1, P2"
+Integration,Q16.5,"Do you use industry-specific platforms (FilmChain, Rightsline, Cinando) you'd want to integrate?","P1, P2, P4"
+General,Q17.1,"What are the top 3 pain points in your current collection accounting workflow?",All
+General,Q17.2,"What takes the most time in your day-to-day work that you wish were automated?",All
+General,Q17.3,"What features would make you switch from your current system to AHCAM?",All
+General,Q17.4,"What's the biggest risk or fear about adopting a new platform?",All
+General,Q17.5,"Is there anything about collection account management we haven't covered?",All
+General,Q17.6,"How many productions do you typically manage simultaneously?",All
+General,Q17.7,"What is the typical volume of transactions per month across all productions?",All
+General,Q17.8,"Do you operate globally or in specific regions? Which territories are most important?",All
